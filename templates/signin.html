@@ -90,6 +90,7 @@
         </div>
       
         <!-- Register buttons -->
+         {% if not admin %}
         <div class="text-center">
           <p>Not a member? <a href="{% url 'register' %}" class="btn btn-danger" style="cursor: pointer;" id="register_button">Register</a></p>
           <p>or sign up with:</p>
@@ -102,7 +103,7 @@
             <i class="bi bi-google"></i>
           </a>
         
-      
+
           <button type="button" data-mdb-button-init data-mdb-ripple-init class="btn btn-link btn-floating mx-1">
             <i class="bi bi-twitter-x"></i>
           </button>
@@ -111,6 +112,7 @@
             <i class="bi bi-github"></i>
           </button>
         </div>
+        {% endif %}
       </form>
     </div>
     <!-- End Sign in -->
