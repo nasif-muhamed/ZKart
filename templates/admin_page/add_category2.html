@@ -1,0 +1,116 @@
+{% extends 'admin_page/layout/main.html' %}
+{% load static %}
+
+{% block header %}
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropper/4.1.0/cropper.min.css"/>
+
+<style>
+  .not-visible{
+     display: none;
+  }
+  li{
+    font-weight: 700;
+    color: white;
+    margin-right: 25px;
+  }
+</style>
+{% endblock header %}
+
+{% block content %}
+<div class="container tm-mt-big tm-mb-big">
+  {% if messages %}
+  <div class="alert-container">
+      {% for message in messages %}
+      <div class="alert alert-{{ message.tags }}" role="alert">
+          {{ message }}
+      </div>
+      {% endfor %}
+  </div>
+  {% endif %}
+
+  <div class="row">
+    <div class="col-xl-9 col-lg-10 col-md-12 col-sm-12 mx-auto">
+      <div class="tm-bg-primary-dark tm-block tm-block-h-auto">
+        <div class="row">
+          <div class="col-12">
+            <h2 class="tm-block-title d-inline-block">Add Sizes for {{category.name}}</h2>
+          </div>
+        </div>
+
+        <div class="row tm-edit-product-row">
+            <div class="col-xl-6 col-lg-6 col-md-12 mx-auto mb-4">
+
+            <form id="size-form" method="post" action="{% url 'add_category2' category.id %}" class="tm-edit-product-form" enctype="multipart/form-data">
+              {% csrf_token %}
+              
+                <div class="form-group mb-3">
+                  <input id="size" name="size" type="text" class="form-control validate" required />
+                  <label for="size">Size</label>
+                </div>
+
+              </div>
+
+              <div class="col-xl-6 col-lg-6 col-md-12 mx-auto mb-4">
+                <div class="form-group d-flex">
+                  <button type="submit" class="btn btn-success btn-block text-uppercase">Add Size</button>
+                </div>
+              </div>
+
+              <div class="col-12">
+                <h5 style="font-weight: 700;">{{category.name}} Sizes</h5>
+                <ul id="size-list" style="list-style: none; " class="d-flex">
+                {% for size in sizes %}
+                  <li >{{ size.name }}</li>
+                {% endfor %}
+                </ul>
+              </div>
+              
+              <div class="col-12">
+                <a href="{% url 'product_management' %}" class="btn btn-primary btn-block text-uppercase">Complete</a>
+              </div>
+            </form>
+          </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+{% endblock content %}
+
+{% block scripts %}
+<script src="js/jquery-3.3.1.min.js"></script>
+<!-- https://jquery.com/download/ -->
+<script src="jquery-ui-datepicker/jquery-ui.min.js"></script>
+<!-- https://jqueryui.com/download/ -->
+<script src="js/bootstrap.min.js"></script>
+<!-- https://getbootstrap.com/ -->
+
+<script>
+  $(document).ready(function(){
+      $('#size-form').on('submit', function(e){
+          e.preventDefault();
+          $.ajax({
+              url: $(this).attr('action'),
+              method: $(this).attr('method'),
+              data: $(this).serialize(),
+              success: function(response){
+                  $('#size-list').empty();
+                  $.each(response.sizes, function(index, size){
+                      $('#size-list').append('<li>' + size.name + '</li>');
+                  });
+                  $('#size-form')[0].reset();
+              },
+              error: function(response){
+                if(response.responseJSON && response.responseJSON.error){
+                    alert(response.responseJSON.error); // Display the error message from the server
+                } else {
+                    alert('An unexpected error occurred.');
+                }
+                window.location.reload();
+              }
+          });
+      });
+  });
+ 
+</script>
+{% endblock scripts %}

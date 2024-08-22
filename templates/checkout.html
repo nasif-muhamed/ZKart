@@ -1,0 +1,430 @@
+{% extends 'layouts/main.html' %}
+{% load static %}
+{% load socialaccount %}
+
+{% block header %}
+<link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:400,700">
+<!-- https://fonts.google.com/specimen/Roboto -->
+
+<script type="text/javascript">
+  var user = '{{request.user}}'
+
+  function getCookie(name) {
+      let cookieValue = null;
+      if (document.cookie && document.cookie !== '') {
+          const cookies = document.cookie.split(';');
+          for (let i = 0; i < cookies.length; i++) {
+              const cookie = cookies[i].trim();
+              // Does this cookie string begin with the name we want?
+              if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                  cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                  break;
+              }
+          }
+      }
+      return cookieValue;
+  }
+  const csrftoken = getCookie('csrftoken');
+</script>
+
+<style>
+  .ecommerce h1, .ecommerce h2, .ecommerce h3, .ecommerce h4, .ecommerce h5, .ecommerce h6, p{
+    text-transform: none;
+    font-family: Roboto, sans-serif
+  }
+
+  .main p{
+    font-size: large;
+  }
+
+  input[type=radio]{
+    height: 20px;
+    width: 20px;
+  }
+
+  .heading{
+    background-color: rgb(246, 197, 106);
+  }
+
+  .table>tbody>tr>td,
+  .table .thead-light th{
+    vertical-align: middle;
+  }
+
+  .table>tbody>tr>td p,
+  .table>tbody>tr>th p,
+  .table .thead-light th p{
+    margin: 0;
+  }
+  .product-image {
+      width: 70px;
+      height: 100px;
+      object-fit: cover;
+  }
+  .order-summary {
+      max-width: 600px;
+      margin: auto;
+  }
+</style>
+
+{% endblock header %}
+
+{% block content %}
+
+<div class="main" style="padding: 50px 100px; ">
+  <div class="row pb-5 mb-5" style="background-color: wheat;">
+    <div class="container-fluid">
+      <div class="row heading p-3 mb-5" >
+        <h2 class="col-12 my-3"> <strong>Delivery Address</strong> </h2>
+      </div>
+      <div class="row">
+
+        <!-- Modal add address -->
+        <div class="modal fade" id="addAddressModal" tabindex="-1" role="dialog" aria-labelledby="addAddressModalLabel" aria-hidden="true">
+          <div class="modal-dialog modal-lg " role="document" style="margin-top: 200px;">
+              <div class="modal-content">
+                  <div class="modal-header">
+                      <h5 class="modal-title" id="addAddressModalLabel">Add New Address</h5>
+                      <button style="font-size: 30px;" type="button" class="close" data-dismiss="modal" aria-label="Close">
+                          <span aria-hidden="true">&times;</span>
+                      </button>
+                  </div>
+                  <div class="modal-body">
+      
+                    <form id="addAddressForm" action="{% url 'address_management' %}" method="post">
+                      {% csrf_token %}
+                      <!-- Add your existing address form here -->
+                      <!-- Example Form Fields -->
+                      <input type="hidden" name="next" value="{{ request.path }}">
+                      <input type="hidden" name="checkout_access" value="True">
+                      <div class="row">
+                        <div class="mb-3 col-lg-6 col-md-6 col-sm-12">
+                          <label for="name" class="form-label">Name</label>
+                          <input type="text" class="form-control" id="name" name="name" placeholder="Full Name" required >
+                        </div>
+                        
+                        <div class="mb-3 col-lg-6 col-md-6 col-sm-12">
+                          <label for="mobile" class="form-label">Mobile</label>
+                          <input type="number" min="0000000000" max="9999999999" class="form-control" id="mobile" name="mobile" required>
+                        </div>
+                        
+                        <div class="mb-3 col-12">
+                          <label for="address_line1" class="form-label">Address Line 1</label>
+                          <input type="text" class="form-control" id="address_line1" placeholder="(House No, Building, Street, Area)*" name="address_line1" required>  
+                        </div>
+
+                        <div class="mb-3 col-12">
+                          <label for="address_line2" class="form-label">Address Line 2 (optional)</label>
+                          <input type="text" class="form-control" id="address_line2" placeholder="Additional Informations" name="address_line2">
+                        </div>
+
+                        <div class="mb-3 col-md-6">
+                          <label for="city" class="form-label">City</label>
+                          <input type="text" class="form-control" id="city" name="city" required>
+                        </div>
+
+                        <div class="mb-3 col-md-6">
+                          <label for="state" class="form-label">State</label>
+                          <input type="text" class="form-control" id="state" name="state" required>
+                        </div>
+
+                        <div class="mb-3 col-md-6">
+                          <label for="pin_code" class="form-label">Pin Code</label>
+                          <input type="number" min="0" class="form-control" id="pin_code" name="pin_code" required>
+                          <input type="hidden"  class="form-control" id="latitude" name="latitude" hidden required>
+                          <input type="hidden"  class="form-control" id="longitude" name="longitude" hidden required>                
+                        </div>
+
+                        <div class="mb-3 col-md-6">
+                          <label for="country" class="form-label">Country</label>
+                          <input type="text" class="form-control" id="country" name="country" required>
+                        </div>
+
+                        <div class="form-check mb-3 d-flex align-items-center">
+                          <input class="form-check-input" type="checkbox" value="True" id="default" name="default" hidden checked>
+                          <label class="form-check-label ml-5" for="default" hidden>
+                            Set as default address
+                          </label>
+                        </div>
+                        <div class="col-12">
+                          <button type="submit" class="btn btn-success">Save Address</button>
+                        </div>
+                      </div>
+                    </form>
+                    
+                  </div>
+              </div>
+          </div>
+        </div>
+        <!-- Modal add address -->
+
+        <!-- Add New Address Button -->
+        <div class="col-md-6 mb-3">
+          <div class="card h-100">
+            <div class="card-body d-flex align-items-center justify-content-center">
+                <button class="btn btn-primary btn-lg" data-toggle="modal" data-target="#addAddressModal">Add New Address</button>
+            </div>
+          </div>
+        </div>
+        <!-- Add New Address Button -->
+          <!-- Existing Addresses -->
+          {% for address in addresses %}
+          <div class="col-md-6 mb-3" id="address-list">
+            <div class="card h-100 p-3" style="border-radius: 20px !important;">
+              <div class="card-body">
+                    <form action="" method="post">
+                      {% csrf_token %}
+                <div class="form-check d-flex align-items-center mb-3" style="padding: 0;">
+                  <input style="position: relative; margin: 0;" class="form-check-input" type="radio" name="selectedAddress" 
+                          id="address${address.id}" value="{{address.id}}" {% if address.default %}checked{% endif %} required>
+                  <label style="font-size: small;" class="form-check-label ml-3" for="address${address.id}">
+                      Select this address
+                  </label>
+                </div>
+
+                <p>Name: <strong>{{address.name}}</strong></p>
+                <p>Mobile: <strong>{{address.mobile}}</strong> </p>
+                <p>Address: <strong>{{address.address_line1}}</strong></p>
+                <p>City: <strong>{{address.city}}</strong>, Pincode: <strong>{{address.pin_code}}</strong></p>
+        
+              </div>
+            </div>
+          </div>
+          {% endfor %}
+
+          <div class="col-md-12 mb-3 mt-3">
+            <label for="special_instructions" style="font-size: large;" class="form-label">Special Instructions (optional)</label>
+            <input type="text" class="form-control py-5" id="special_instructions" placeholder="Additional Informations" name="special_instructions">
+          </div>
+      </div>
+      
+    </div>
+  </div>
+
+  <div class="row">
+    <div class="col-8">
+      
+      <div class="container-fluid pb-5 mb-5" style="background-color: wheat;">
+        <div class="row heading p-3 mb-5" >
+          <h2 class="col-12 my-3"> <strong>Order Summary</strong> </h2>
+        </div>
+        <div class="col-12  ">
+  
+          <table class="table table-bordered">
+            <thead class="thead-light">
+                <tr>
+                    <th scope="col"><p>Product</p></th>
+                    <th scope="col"><p>Price</p></th>
+                    <th scope="col"><p>Quantity</p></th>
+                    <th scope="col"><p>Total</p></th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for order_item in orders %}
+                <tr>
+                    <td>
+                        <div class="d-flex align-items-center">
+                            <img src="{{order_item.product_variant.product.product_images.all.0.product_image.url}}" alt="Product Image" class="product-image mr-2">
+                            <div>
+                              <p class="mb-1"><strong>{{order_item.product_variant.product.brand}}</strong></p>
+                              <p class="mb-1">{{order_item.product_variant.product.title}}</p>
+                              <p class="mb-1">Size: <strong>{{order_item.product_variant.size.name}}</strong></p>
+                              <p class="mb-1">Color: <strong>{{order_item.product_variant.color.name}}</strong></p>
+                            </div>
+                        </div>
+                    </td>
+                    <td style="text-align: center;"><p>₹ {{order_item.product_variant.product.product_selling_price|floatformat:0}}</p></td>
+                    <td style="text-align: center;"><p>{{order_item.quantity}}</p></td>
+                    <td style="text-align: center;"><p>
+                      <strong>₹ {{order_item.get_total|floatformat:0}}</strong>
+                    </p></td>
+                </tr>
+                {% endfor %}
+            </tbody>
+          </table>
+  
+        </div>
+      </div>
+      
+    </div>
+  
+    <div class="col-4 ">
+      
+      <div class="container-fluid pb-5 mb-5" style="background-color: wheat;">
+        <div class="row heading p-3 mb-5" >
+          <h2 class="col-12 my-3"> <strong>Order Summary</strong> </h2>
+        </div>
+        <div class="col-12  ">
+          <div class="d-flex justify-content-end mt-4">
+            <table class="table table-bordered" >
+                <tbody>
+                    <tr>
+                        <th scope="row"><p>Sub Total</p></th>
+                        <td style="text-align: center;">
+                          <p>₹ {{sub_total|floatformat:0}}</p>
+                        </td>
+                    </tr>
+
+                    {% if request.session.coupon_discount %}
+                    <tr>
+                      <th scope="row"><p>Coupon Discount</p></th>
+                      <td style="text-align: center;">
+                        <p>- ₹{{request.session.coupon_discount|floatformat:0}}</p>
+                      </td>
+                    </tr>
+                    {% endif %}
+
+                    <tr>
+                        <th scope="row"><p>Shipping Fee</p></th>
+                        <td style="text-align: center;">
+                          <p><span id="delivery-charge"></span></p>
+                        </td>
+                    </tr>
+                    <tr>
+                        <th scope="row"><p>Total Amount</p></th>
+                        <td style="text-align: center;">
+                          <p><strong id="grand-total"></strong></p>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+            
+          </div>
+          <div class="col-12  mt-5">
+            <div>
+              <h1 style="font-size: xx-large; color: rgb(7, 162, 155); margin: 0;"><strong id="grand-total-huge"></strong></h1>
+            </div>
+            <div class="d-flex mt-5" style="flex-direction: column;">
+              {% if total_amount <= 1000 %}
+              <button name="cod_button" type="submit" class="btn btn-success btn-lg p-3 mb-2" style="font-size: 20px; border-radius: 10px !important;">Confirm with COD</button>
+              {% endif %}
+              <button id="rzp-button1" type="button" class="btn btn-primary btn-lg p-3 payWithRazorpay mb-2" style="font-size: 20px; border-radius: 10px !important;">Pay with Razorpay</button>  
+              {% if user.account.wallet.balance > total_amount %}
+              <button name="wallet_button" id="wallet" type="submit" class="btn btn-lg p-3" style="font-size: 20px; border-radius: 10px !important; background-color: blueviolet; color: white;">
+                Pay with Wallet</button>  
+              {% endif %}
+            </div>
+                  </form>
+          </div>
+        </div>
+      </div>
+      
+    </div>
+  </div>
+
+</div>
+
+{% endblock content %}
+
+{% block scripts %}
+<script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.5.4/dist/umd/popper.min.js"></script>
+<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+
+
+<script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+<script src="{% static 'payment_integration/checkout_page.js' %}" type="text/javascript"></script>
+
+<script>
+    
+  /*
+    document.getElementById('addAddressForm').addEventListener('submit', function(event) {
+        event.preventDefault();
+        // Collect form data and add new address logic
+        // Close the modal after adding the address
+        $('#addAddressModal').modal('hide');
+    });
+    */
+
+
+  // Confirming Pincode While user add new Address
+  document.getElementById('addAddressForm').addEventListener('submit', function(e) {
+    e.preventDefault(); 
+    const pinCode = document.getElementById('pin_code').value;
+
+    // Call the Zippopotam API
+    fetch(`https://api.zippopotam.us/IN/${pinCode}`)
+      .then(response => {
+        if (!response.ok) {
+          throw new Error('Invalid pin code');
+        }
+        return response.json();
+      })
+      .then(data => {
+        const placeName = data.places[0]['place name'];
+        const latitude = data.places[0]['latitude'];
+        const longitude = data.places[0]['longitude'];
+        const confirmationMessage = `Pin code: ${pinCode}\nPlace name: ${placeName}\nDo you want to proceed?`;
+
+        const userConfirmed = confirm(confirmationMessage);
+        if (userConfirmed) {
+          document.getElementById('latitude').value = latitude
+          document.getElementById('longitude').value = longitude
+          document.getElementById('addAddressForm').submit();
+        }else{
+          return;
+        }
+      })
+      .catch(error => {
+        alert('The entered pin code does not exist. Please check and try again.');
+      });
+  });
+
+  document.addEventListener('DOMContentLoaded', function () {
+    // Function to send the AJAX request and update the delivery charge
+    var subTotal = '{{sub_total|floatformat:0}}'
+    var couponDiscount = '{{coupon_discount_js|floatformat:0}}'
+    subTotal = Number(subTotal)
+    couponDiscount = Number(couponDiscount)
+    console.log(subTotal)
+    console.log(couponDiscount)
+    function updateDeliveryCharge(addressId) {
+        fetch("{% url 'get_delivery_charge' %}", {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': csrftoken,
+                'Content-Type': 'application/x-www-form-urlencoded'
+            },
+            body: new URLSearchParams({
+                'address_id': addressId
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            var delivery_charge = data.delivery_charge
+            if(delivery_charge == 'Free' || delivery_charge == 'None'){
+              int_delivery_charge = 0
+              document.getElementById('delivery-charge').innerText = delivery_charge;
+              if(delivery_charge == 'None'){
+                alert('Invalid Address Add/Select Another one')
+              }
+            }else{
+              int_delivery_charge = Number(delivery_charge)
+              document.getElementById('delivery-charge').innerText = '₹' + delivery_charge;
+            }
+            grandTotal = subTotal + int_delivery_charge - couponDiscount
+            console.log(grandTotal)
+            document.getElementById('grand-total').innerText = '₹' + grandTotal;
+            document.getElementById('grand-total-huge').innerText = 'INR ' + grandTotal;
+        });
+    }
+
+    // Update delivery charge on page load for the default address
+    const defaultAddressId = document.querySelector('input[name="selectedAddress"]:checked').value;
+    console.log(defaultAddressId)
+    updateDeliveryCharge(defaultAddressId);
+
+    // Add event listener to radio inputs to update delivery charge on change
+    document.querySelectorAll('input[name="selectedAddress"]').forEach(function (input) {
+        input.addEventListener('change', function () {
+          console.log('changed')
+          console.log(this.value)
+          updateDeliveryCharge(this.value);
+        });
+    });
+  });
+
+</script>
+{% endblock scripts %}

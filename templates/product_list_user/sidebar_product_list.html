@@ -1,0 +1,81 @@
+{% load static %}
+{% load row_splitter %}
+
+<!-- BEGIN SIDEBAR -->
+<form name="filter_form" method="GET" action="" id="filter-form">
+  <div class="sidebar col-md-3 col-sm-5">
+    <h2 style="font-weight: 700;">Filters</h2>
+    <input type="hidden" name="form_submitted" value="true">
+    <input type="hidden" name="search" value="{{ request.GET.search }}">
+    <input type="hidden" name="sort" value="{{ request.GET.sort }}">
+
+    <strong>Gender</strong>
+    <ul class="list-group margin-bottom-25 sidebar-menu">
+      <li class="list-group-item clearfix">
+        <input type="radio" name="gender" value="M" id="gender-male" {% if request.GET.gender == "M" %}checked{% endif %}>
+        <label for="gender-male">Male</label><br>
+      </li>
+      <li class="list-group-item clearfix">
+        <input type="radio" name="gender" value="F" id="gender-female" {% if request.GET.gender == "F" %}checked{% endif %}>
+        <label for="gender-female">Female</label><br>
+      </li>
+
+    </ul>
+
+    <strong>Categories</strong>
+    <ul class="list-group margin-bottom-25 sidebar-menu">
+      {% for category in categories %}
+      <li class="list-group-item clearfix">
+        <input type="checkbox" name="category" value="{{ category.id }}" id="category-{{ category.id }}"
+          {% if category.id|stringformat:"s" in request|getlist:"category" %}checked{% endif %} >
+        <label for="category-{{ category.id }}">{{ category.name }}</label><br>
+      </li>
+      {% endfor %}
+    </ul>
+
+    <strong>Brands</strong>
+    <ul class="list-group margin-bottom-25 sidebar-menu">
+      {% for brand in brands %}
+      <li class="list-group-item clearfix">
+        <input type="checkbox" name="brand" value="{{ brand }}" id="brand-{{ brand }}"
+        {% if brand in request|getlist:"brand" %}checked{% endif %}>
+        <label for="brand-{{ brand }}">{{ brand }}</label><br>
+      </li>
+      {% endfor %}
+    </ul>
+
+    <div class="sidebar-filter margin-bottom-25">
+      {% comment %}
+      <h3>Availability</h3>
+      <div class="checkbox-list">
+        <label><input type="checkbox"> Not Available (3)</label>
+        <label><input type="checkbox"> In Stock (26)</label>
+      </div>
+      {% endcomment %}
+
+      <h3>Price</h3>
+      <input type="number" name="price_min" placeholder="Min" value="{{ request.GET.price_min }}" min="1">
+      <input type="number" name="price_max" placeholder="Max" value="{{ request.GET.price_max }}" style="margin-top: .5rem;" min="1">
+    </div>
+
+    {% comment %}
+    <div class="sidebar-products clearfix">
+      <button class="btn btn-danger" type="submit" name="apply_filter">Apply Filters</button>
+    </div>
+    {% endcomment %}
+  </div>
+</form>
+<!-- END SIDEBAR -->
+
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    const filterForm = document.getElementById('filter-form');
+    const filterInputs = filterForm.querySelectorAll('input');
+
+    filterInputs.forEach(input => {
+        input.addEventListener('change', function() {
+            filterForm.submit();
+        });
+    });
+  });
+</script>

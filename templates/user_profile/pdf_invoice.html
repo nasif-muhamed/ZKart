@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tax Invoice</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            font-size: 14px;
+            line-height: 1.5;
+        }
+        /* .container {
+            width: 100%;
+            margin: 20px auto;
+            padding: 20px;
+            max-width: 800px;
+        } */
+        .header {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        .header h1 {
+            margin: 0;
+            font-size: 24px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+        .details {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 20px;
+        }
+        .left, .right {
+            width: 40%;
+        }
+        .right p, .right h3{
+            text-align: right;
+        }
+        .right h3 {
+            margin-top: 0;
+        }
+        .table {
+            width: 80%;
+            margin-bottom: 20px;
+            border-collapse: collapse;
+        }
+        .table th, .table td {
+            padding: 8px;
+            text-align: left;
+        }
+        .table th {
+            background-color: #f5f5f5;
+        }
+        .totals {
+            text-align: right;
+            margin-top: 20px;
+        }
+        .totals p {
+            margin: 0;
+        }
+        .footer {
+            text-align: center;
+            margin-top: 40px;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="header">
+        <h1>Tax Invoice</h1>
+    </div>
+
+    <div class="details">
+        <div class="left">
+            <p><strong>Order ID:</strong> {{ order.order_identifier }}</p>
+            <p><strong>Order Date:</strong> {{ order.order_date | date:"M d, Y" }}</p>
+            <p><strong>Order Status:</strong> {{ order.get_status_display }}</p>
+            <p><strong>Payment Method:</strong> {{ order.get_payment_method_display }}</p>
+            <!-- <p><strong>Payment Status:</strong> {{ order.payment_status }}</p> -->
+        </div>
+
+        <div class="right">
+            <h3>Invoiced To</h3>
+            <p><strong>Name:</strong> {{order.address.name}}</p>
+            <p><strong>Address:</strong> {{order.address.address_line1}}</p>
+            <p><strong>Mobile:</strong> {{order.address.mobile}} </p>
+            <p><strong>Address:</strong> {{order.address.address_line1}}</p>
+            <p><strong>State:</strong> {{order.address.state}} <strong>City:</strong> {{order.address.city}} <strong>Pincode:</strong> {{order.address.pin_code}} </p>
+        </div>
+    </div>
+
+    <table class="table " style="margin-right: 10px;">
+        <thead>
+            <tr>
+                <th>Product</th>
+                <th>Price</th>
+                <th>Coupon Discount</th>
+                <th>Total</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for item in order.order_items.all %}
+            <tr>
+                <td style="width: 50%;">
+                    {{ item.product_variant.product.title }} <br>
+                    <strong>Size:</strong> {{ item.product_variant.size.name }} 
+                    <strong>Color:</strong> {{ item.product_variant.color }} 
+                    <strong>Quantity:</strong> {{ item.quantity }}
+                </td>
+                <td style="width: 10%;">
+                    {{ item.selling_price | floatformat:0}}<br>
+                    <span style="text-decoration: line-through;">{{ item.original_price | floatformat:0 }}</span>
+                </td>
+                <td>
+                    {% if order.coupon %}
+                    -{{ item.coupon_discount | floatformat:0 }}
+                    {% else %}
+                    N/A
+                    {% endif %}
+
+                </td>
+                <td >{{ item.item_grand_total | floatformat:0 }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <div class="totals">
+        <p>Subtotal: {{ order.order_total_basic | floatformat:0 }}</p>
+        <p>
+            Coupon:
+            {% if order.coupon %}
+            -{{ order.coupon_discount | floatformat:0 }} <br>({{order.coupon.coupon_code}})
+            {% else %}
+            N/A
+            {% endif %}
+        </p>
+        <p>
+            Delivery Charge: 
+            {% if order.delivery_charge %}
+            {{ order.delivery_charge | floatformat:0 }}
+            {% else %}
+            FREE
+            {% endif %}
+        </p>
+        <p><strong>Grand Total: {{ order.order_total_amount | floatformat:0 }}</strong></p>
+    </div>
+
+    <div class="footer">
+        <p>Thank you for shopping with us!</p>
+        <p>ZKart - Perfect solution for GenZ</p>
+    </div>
+</div>
+
+</body>
+</html>

@@ -1,0 +1,222 @@
+{% extends 'user_profile/profile_base.html' %}
+{% load static %}
+{% load row_splitter %}
+
+{% block style %}
+<link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:400,700">
+<style>
+.order-status{
+	
+	display: inline-block;
+	border-radius: 20px !important;
+}
+.success{
+	background-color: rgb(184 222 184);
+}
+.danger{
+	background-color: lightcoral;
+}
+
+.warning{
+	background-color: rgb(231, 231, 75);
+}
+.darker{
+	background-color: rgba(0, 0, 0, 0.444);
+	color: white;
+}
+.order-total-amount{
+	background-color: rgb(2, 67, 2);
+	display: inline-block;
+	color: white;
+}
+.order-header small{
+	color: rgb(108, 108, 10);
+	font-weight: 600;
+}
+</style>
+
+<style>
+	.order-container {
+			border: 1px solid #e0e0e0;
+			border-radius: 10px;
+			margin-bottom: 20px;
+			padding: 20px;
+			background-color: #f9f9f9;
+			transition: box-shadow 0.3s ease;
+			cursor: pointer;
+	}
+	.order-container:hover {
+			box-shadow: 0 4px 8px rgba(0, 0, 0, 0.4);
+	}
+	.order-header {
+			font-size: 1.25rem;
+			font-weight: 500;
+			margin-bottom: 15px;
+			cursor: pointer;
+	}
+	.order-info {
+			display: flex;
+			justify-content: space-between;
+			align-items: center;
+			margin-bottom: 15px;
+	}
+	.order-info div {
+			flex: 1;
+			padding: 0 10px;
+	}
+	.order-item {
+			display: flex;
+			align-items: center;
+			padding: 10px 0;
+			border-bottom: 1px solid #e0e0e0;
+	}
+	.order-item:last-child {
+			border-bottom: none;
+	}
+	.order-item img {
+			max-width: 140px;
+			border-radius: 5px;
+			margin-right: 15px;
+	}
+	.order-item-info {
+			flex: 1;
+	}
+	.order-footer {
+			display: flex;
+			justify-content: space-between;
+			align-items: center;
+			font-weight: 600;
+	}
+	.order-total {
+			font-size: 1.1rem;
+	}
+</style>
+
+<style>
+	.order-item-status-box {
+        padding: 5px 10px;
+        border-radius: 5px;
+        color: white;
+    }
+	.order-item-status-box-progress {
+        background-color: #007bff;
+    }
+    .order-item-status-box-success {
+        background-color: #098326;
+    }
+    .order-item-status-box-ship {
+        background-color: #b0b01b;
+    }
+    .order-item-status-box-danger {
+        background-color: #dc3545;
+    }
+	.wallet-color{
+		background-color: blueviolet;
+	}
+	.dark-color{
+		background-color: black;
+	}
+</style>
+{% endblock style %}
+
+{% block main_body %}
+<div class="row">
+    <div class="container-fluid">
+        <div class="col-12">
+            <div class="container-fluid pb-5 mb-5">
+						<div class="row heading p-3">
+									<h2 class="col-12 "><strong>Order Summary</strong></h2>
+							</div>
+								{% for order in orders %}
+								<div class="order-container" onclick="window.location.href='/my-order-details/{{ order.id }}/'">
+									<div class="order-header">Order Id: # <small>{{ order.order_identifier }}</small></div>
+
+									<div class="order-info">
+										<div><strong>Order Date:</strong> 
+											{% if order.order_date %}
+											{{ order.order_date|date:"M d, Y" }}
+											{% else %}
+											N/A
+											{% endif %}
+										</div>
+										<div >
+											<div
+											{% if order.status == 'completed' %}
+											class="order-status py-1 px-3 darker"
+											{% elif order.status == 'placed' %}
+											class="order-status py-1 px-3 warning"
+											{% else %}
+											class="order-status py-1 px-3 danger"
+											{% endif %}
+											>
+												<strong>Status:</strong> {{ order.get_status_display }}
+											</div>
+										</div>
+										
+									</div>
+									{% for order_item in order.order_items.all %}
+									<div class="order-item">
+										<img src="{{ order_item.product_variant.product.product_images.all.0.product_image.url }}" alt="Product Image">
+										<div class="order-item-info">
+												<p class="mb-1"> {{ order_item.product_variant.product.brand }}</p>
+												<p class="mb-1"><strong>{{ order_item.product_variant.product.title }}</strong></p>
+												<p class="mb-1">Size: {{ order_item.product_variant.size.name }}</p>
+												<p class="mb-1">Color: {{ order_item.product_variant.color.name }}</p>
+												<p class="mb-1 mt-2">Status: 
+													<span 
+													{% if order_item.status == 'in_progress' %}
+													class="order-item-status-box order-item-status-box-progress"
+													{% elif order_item.status == 'delivered' %}
+													class="order-item-status-box order-item-status-box-success"
+													{% elif order_item.status == 'shipped' %}
+													class="order-item-status-box order-item-status-box-ship"
+													{% elif order_item.status == 'cancelled' %}
+													class="order-item-status-box order-item-status-box-danger"
+													{% elif order_item.status == 'returned' %}
+													class="order-item-status-box wallet-color"
+													{% else %}
+													class="order-item-status-box dark-color"
+													{% endif %}
+													>{{ order_item.get_status_display }}</span>
+												</p>
+
+										</div>
+										<div>
+											<p>Price: ₹ {{ order_item.selling_price|floatformat:0 }}</p>
+											<p>Quantity: {{ order_item.quantity }}</p>
+											<p>Total: ₹ {{ order_item.item_total|floatformat:0 }}</p>
+										</div>
+									</div>
+									{% endfor %}
+									
+									{% if order.coupon %}
+									<div class="order-footer mt-2">
+										<p >Coupon Applied: #<span class="text-danger">{{ order.coupon }}</span></p>
+										<p class=" ">Coupon Discount: ₹ {{ order.coupon_discount|floatformat:0 }}</p>	
+									</div>
+									{% endif %}
+									<div class="order-footer">									
+										<div>
+											<span class="order-total">Total Amount Saved: ₹ {{ order.order_total_saved|floatformat:0 }}</span>
+										</div>
+										<div class="order-total-amount py-1 px-5"><span class="order-total">Order Total: ₹ {{ order.order_total_amount|floatformat:0 }}</span></div>
+									</div>
+								</div>
+								{% endfor %}
+								
+							</div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock main_body %}
+
+{% block scripts_profile %}
+<script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.5.4/dist/umd/popper.min.js"></script>
+<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+<script>
+
+</script>
+{% endblock scripts_profile %}

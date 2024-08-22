@@ -1,0 +1,83 @@
+{% extends 'admin_page/layout/main.html' %}
+{% load static %}
+
+{% block header %}
+
+{% endblock header %}
+
+
+{% block content %}
+
+{% if messages %}
+<div class="alert-container">
+    {% for message in messages %}
+    <div class="alert alert-{{ message.tags }}" role="alert">
+        {{ message }}
+    </div>
+    {% endfor %}
+</div>
+{% endif %}
+
+<div class="container mt-5 bg-light p-5">
+    <h1 class="mb-4">Add New Coupon</h1>
+    <form method="post" onsubmit="return validateDiscount()">
+        {% csrf_token %}
+        <div class="mb-3">
+            <label for="coupon_code" class="form-label">Coupon Code</label>
+            <input type="text" class="form-control" name="coupon_code" id="coupon_code" required>
+        </div>
+        <div class="mb-3">
+            <label for="description" class="form-label">Description</label>
+            <textarea name="description" class="form-control" id="description" rows="3" required></textarea>
+        </div>
+        <div class="mb-3">
+            <label for="minimum_amount" class="form-label">Minimum Amount</label>
+            <input name="minimum_amount" type="number" class="form-control" id="minimum_amount" min="1" required>
+        </div>
+        <div class="mb-3">
+            <label for="type" class="form-label">Discount Type</label>
+            <select name="type" class="form-select" id="type" required>
+                <option value="percentage">Percentage</option>
+                <option value="amount">Amount</option>
+            </select>
+        </div>
+        <div class="mb-3">
+            <label for="discount" class="form-label">Discount</label>
+            <input name="discount" type="number" class="form-control" id="discount" min="1" required>
+        </div>
+        <button type="submit" class="btn btn-primary">Add Coupon</button>
+    </form>
+</div>
+{% endblock content %}
+
+
+{% block post_footer %}
+
+{% endblock post_footer %}
+  
+
+{% block scripts %}
+<script>
+function validateDiscount() {
+    const minAmount = parseFloat(document.getElementById('minimum_amount').value);
+    const discountType = document.getElementById('type').value;
+    const discountValue = parseFloat(document.getElementById('discount').value);
+
+    if (discountType === 'amount' && discountValue >= minAmount) {
+        alert('Minimum amount should be more than the discount amount.');
+        return false;
+    }
+
+    if (discountType === 'percentage' && discountValue > 99) {
+        alert('Discount percentage cannot be more than 99%.');
+        return false;
+    }
+
+    if (discountValue < 1 || minAmount < 0) {
+        alert('Enter a valid number.');
+        return false;
+    }
+    return true;
+}
+</script>
+{% endblock scripts %}

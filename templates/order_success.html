@@ -1,0 +1,118 @@
+{% extends 'layouts/main.html' %}
+{% load static %}
+{% load socialaccount %}
+
+
+{% block header %}
+
+<link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:400,700">
+
+<style>
+    .ecommerce h1, .ecommerce h2, .ecommerce h3, .ecommerce h4, .ecommerce h5, .ecommerce h6, p{
+    text-transform: none;
+    font-family: Roboto, sans-serif
+    }
+
+    .success-icon {
+        font-size: 100px;
+        color: green;
+    }
+    .failed-icon {
+        font-size: 100px;
+        color: red;
+    }
+
+    .order-details {
+        background-color: #f9f9f9;
+        padding: 20px;
+        border-radius: 10px;
+        margin-bottom: 20px;
+    }
+    .address-card {
+        background-color: #fff;
+        padding: 20px;
+        border-radius: 10px;
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    }
+    .track-link {
+        color: green;
+        font-weight: bold;
+    }
+    .address-card p {
+      font-size: large;
+    }
+
+    .address-card span {
+      font-size: x-large;
+    }
+</style>
+
+{% endblock header %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="d-flex text-right justify-content-between" >
+      <h4 >Order ID: <strong style="color: rgb(160, 143, 45);"> #{{order.order_identifier}}</strong></h4>
+      <button type="submit" class="btn btn-success btn-lg">Download Invoice</button>
+    </div>
+    <div class="text-center">
+      {% if order.status == 'placed' %}
+        <i class="bi bi-patch-check-fill success-icon"></i>
+        <h1 class="my-3">Order Successful!</h1>
+        <p class="lead">Thank you for your purchase. Your order has been successfully placed.</p>
+      {% else %}
+        <i class="bi bi-exclamation-triangle-fill failed-icon"></i>
+        <h1 class="my-3">Payment Failed!</h1>
+        <p class="lead">You can continue the payment from My Orders.</p>
+      {% endif %}
+      </div>
+    
+    <div class="order-details">
+        <div class="row">
+            <div class="col-md-6">
+                <h4>Order Amount: <strong>₹ {{ order.order_total_amount | floatformat:0 }}</strong></h4>
+            </div>
+            {% if expected_arrival %}
+            <div class="col-md-6 text-right">
+                <h4>Expected Arrival Date: <strong>{{ expected_arrival|date:'d-m-Y' }}</strong></h4>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="address-card">
+        <div class="mb-5">
+          <span ><strong >Delivery Address</strong></span>
+        </div>
+        <p>{{order.address.name}}</p>
+        <p>{{order.address.mobile}}</p>
+        <p>{{order.address.address_line1}}</p>
+        <p>{{order.address.city}}</p>
+        <p>{{order.address.pincode}}</p>
+
+    </div>
+
+    <div class="text-center mt-5 d-flex justify-content-between mb-5 px-5">
+      <div>
+        <h3>Back to Shop</h3>
+        <p><a href="{% url 'home' %}" class="btn btn-warning btn-lg">Home</a></p>
+      </div>
+      <div>
+        <h3>Track Your Orders</h3>
+        <p><a href="{% url 'user_orders_page' %}" class="btn btn-success btn-lg">Manage My Orders</a></p>
+      </div>
+    </div>
+</div>
+{% endblock content %}
+
+{% block post_footer %}
+
+{% endblock post_footer %}
+
+{% block scripts %}
+<script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.5.4/dist/umd/popper.min.js"></script>
+<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+{% endblock scripts %}

@@ -1,0 +1,369 @@
+{% extends 'user_profile/profile_base.html' %}
+{% load static %}
+{% load row_splitter %}
+
+{% block style %}
+<link href="https://stackpath.bootstrapcdn.com/bootstrap/5.3.0/css/bootstrap.min.css" rel="stylesheet">
+<style>
+    .order-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 20px;
+    }
+    .order-id {
+        font-size: 1.2rem;
+        font-weight: 700;
+    }
+    .order-date {
+        font-size: 1.2rem;
+    }
+    .order-details {
+        border: 1px solid #e0e0e0;
+        border-radius: 10px;
+        padding: 20px;
+        margin-bottom: 20px;
+        background-color: #f9f9f9;
+    }
+    .order-status-box, .payment-status-box, .order-item-status-box {
+        padding: 5px 10px;
+        border-radius: 5px;
+        color: white;
+    }
+    .order-status-box {
+        background-color: #007bff;
+    }
+    .payment-status-box {
+        background-color: #dc3545;
+    }
+    .order-item-status-box-progress {
+        background-color: #007bff;
+    }
+    .order-item-status-box-success {
+        background-color: #098326;
+    }
+    .order-item-status-box-ship {
+        background-color: #b0b01b;
+    }
+    .order-item-status-box-danger {
+        background-color: #dc3545;
+    }
+    .wallet-color{
+      background-color: blueviolet;
+    }
+    .dark-color{
+      background-color: black;
+    }
+    .amount-saved {
+        color: rgb(79, 236, 79);
+        font-size: 1.5rem;
+    }
+    .amount-spent {
+        font-size: 2rem;
+        font-weight: 700;
+    }
+    .disabled-button {
+        opacity: 0.6;
+        pointer-events: none;
+    }
+    .order-item-card {
+        border: 1px solid #e0e0e0;
+        border-radius: 10px;
+        padding: 20px;
+        margin-bottom: 20px;
+        background-color: #f9f9f9;
+    }
+
+    .btn{
+      border-radius: 20px !important;
+    }
+
+    .alert-error{
+      background-color: rgba(255, 0, 0, 0.396);
+      color: white;
+    }
+</style>
+{% endblock style %}
+
+{% block main_body %}
+<div class="container ">
+  {% if messages %}
+  <div class="alert-container">
+      {% for message in messages %}
+      <div class="alert alert-{{ message.tags }}" role="alert">
+          {{ message }}
+      </div>
+      {% endfor %}
+  </div> 
+  {% endif %}
+
+  <div class="order-header">
+      <div class="order-id">Order #<span style="color: rgb(126, 126, 2);">{{ order.order_identifier }}</span></div>
+      {% if order.order_date %}
+      <div class="order-date">{{ order.order_date|date:"M d, Y H:i" }}</div>
+      {% endif %}
+  </div>
+
+  <div class="order-details">
+    <div class="row mb-3">
+      <div class="col-md-6">
+        <div class="row">
+          <div class="col-12 mb-3"><strong>Delivery Address:</strong></div>
+          <div class="col-12">
+            <p><strong>Name:</strong> {{order.address.name}}</p>
+            <p><strong>Mobile:</strong> {{order.address.mobile}} </p>
+            <p><strong>Address:</strong> {{order.address.address_line1}}</p>
+            <p><strong>City:</strong> {{order.address.city}} </p>
+            <p><strong>Pincode:</strong> {{order.address.pin_code}}</p>
+          </div>
+
+          <div class="col-12">
+            <strong>Order Status:</strong> 
+            <span class="order-status-box ml-5">{{ order.get_status_display }}</span>
+          </div>
+
+          <div class="col-12 mt-4"><strong>Delivery Charge:</strong> 
+            {% if order.delivery_charge %}
+            <span class=" ml-5">₹ {{ order.delivery_charge|floatformat:0 }}</span>
+            {% else %}
+            <span class=" ml-5" style="color: #dc3545;">Free</span>
+            {% endif %}
+          </div>
+
+        </div>
+
+      </div>
+
+      <div class="col-md-6">
+
+        <div class="row mb-3">
+          <div class="col-12"><strong>Amount Saved:</strong> <span class="amount-saved ml-5">₹ {{ order.order_total_saved|floatformat:0 }}</span></div>
+          <div class="col-12"><strong>Amount Spent:</strong> <span class="amount-spent ml-5">₹ {{ order.order_total_amount|floatformat:0 }}</span></div>    
+        </div>
+
+        <div class="row mb-3">
+          <div class="col-md-12 text-end" >
+            <strong>Order Method:</strong> 
+            <span class="px-3 py-1 ml-5" style="color: white; font-weight: 700; background-color: black;">{{order.get_payment_method_display}}</span>
+          </div>
+        </div>
+        {% if order.coupon %}
+        <div class="row mb-2">
+          <div class="col-md-12 text-end">
+            <p >Coupon Applied: #<span class="text-danger">{{ order.coupon }}</span></p>
+            <p class=" ">Coupon Discount: ₹ {{ order.coupon_discount|floatformat:0 }}</p>	  
+          </div>
+        </div>
+        {% endif %}
+
+        {% if order.status == 'pending' %}
+        <div class="row mb-3">
+          <div class="col-12 mb-3"><strong>Complete Payment</strong></div>
+          <div class="col-12">
+            <button id="rzp-button1" class="btn btn-primary payWithRazorpayFromOrder" style="width: 100%;">
+              <i class="bi bi-credit-card"></i> Continue Razorpay
+            </button>  
+          </div>
+        </div>
+        {% endif %}
+
+        <div class="row mb-3">
+          <div class="col">
+            <form action="" method="post">
+              {% csrf_token %}
+              <a href="?invoice_btn=True" name="invoice_btn" type="submit" class="btn btn-secondary ">Download Invoice</a>
+            </form>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Loop through order items here -->
+  {% for order_item in order.order_items.all %}
+  <div class="order-item-card"
+  {% if order_item.status == 'cancelled' %} style="background-color: rgb(224 224 224);" {% endif %} >
+      <div class="row">
+          <div class="col-md-2">
+              <img src="{{ order_item.product_variant.product.product_images.all.0.product_image.url }}" alt="Product Image" class="img-fluid">
+          </div>
+          <div class="col-md-10">
+              <div class="mb-3">
+                <h5 ><a href="{% url 'product_details' order_item.product_variant.product.id %}">{{ order_item.product_variant.product.title }}</a></h5>
+              </div>
+
+              <div class="d-flex justify-content-between mb-3">
+                <p style="display: inline-block;" ><strong>Brand:</strong> {{ order_item.product_variant.product.brand }}</p>
+                <p style="display: inline-block;" class="ml-5"><strong>Status:</strong> 
+                  <span 
+                  {% if order_item.status == 'in_progress' %}
+                  class="order-item-status-box order-item-status-box-progress"
+                  {% elif order_item.status == 'delivered' %}
+                  class="order-item-status-box order-item-status-box-success"
+                  {% elif order_item.status == 'shipped' %}
+                  class="order-item-status-box order-item-status-box-ship"
+                  {% elif order_item.status == 'cancelled' %}
+                  class="order-item-status-box order-item-status-box-danger"
+                  {% elif order_item.status == 'returned' %}
+                  class="order-item-status-box wallet-color"
+                  {% else %}
+                  class="order-item-status-box dark-color"
+                  {% endif %}
+                  >{{ order_item.get_status_display }}</span></p>  
+              </div>
+
+              <div class="d-flex justify-content-between mb-3">
+                <p style="display: inline-block;"><strong>Color: </strong> {{ order_item.product_variant.color.name }}</p>
+                <p style="display: inline-block;" class="ml-3"><strong>Size: </strong> {{ order_item.product_variant.size.name }}</p>  
+                <div>
+                  <p style="display: inline-block;" class=""> 
+                    {% if order_item.status == 'delivered' or order_item.status == 'return_request' or order_item.status == 'returned' %}
+                    <strong>Arrived At:</strong> 
+                    <span style="color: cornflowerblue;"><strong>{{ order_item.completed_date|date:"M d, Y" }}</strong></span>
+                    {% elif order_item.status == 'cancelled' %}
+                    <strong>Cancelled At:</strong>
+                    <strong style="color: red;">{{ order_item.completed_date|date:"M d, Y" }}</strong>
+                    {% else %}
+                    <strong>Expected Arrival:</strong> 
+                      {% if expected_date %}
+                      <span style="color: #b0b01b;">
+                      <strong>{{ expected_date|date:"M d, Y" }}</strong>
+                      </span>
+                      {% else %}
+                      N/A
+                      {% endif %}
+                    {% endif %}
+                  </p>
+                  {% if order_item.return_date %}
+                  <p>
+                    {% if order_item.status == 'delivered' %}
+                    <strong style="color: red;">Not Possible to Return</strong>
+                    {% else %}
+
+                      {% if order_item.status == 'return_request' %}
+                      <strong>Requested At:</strong>
+                      {% elif order_item.status == 'returned' %}
+                      <strong>Returned At:</strong>
+                      {% endif %}
+                      <strong style="color: red;">{{ order_item.return_date|date:"M d, Y" }}</strong>
+
+                    {% endif %}
+                  </p>
+                  {% endif %}
+                </div>
+                
+              </div>
+
+              <div class="d-flex justify-content-between ">
+                <p style="display: inline-block;" >Price: ₹ {{ order_item.selling_price|floatformat:0 }}</p>
+                <p style="display: inline-block;" class="ml-3">Quantity: {{ order_item.quantity }}</p>
+                <p style="display: inline-block;" class="ml-3">Total: ₹ <strong>{{ order_item.item_total|floatformat:0 }}</strong></p>  
+              </div>
+
+              <div class="d-flex align-items-center justify-content-between mt-3">
+
+                {% if order_item.status == 'cancelled' or order_item.status == 'returned' or order_item.status == 'pending' %}
+                {% elif order_item.return_date and order_item.status == 'delivered' %}
+                {% else %}
+                <div>
+                  {% if order_item.status == 'delivered' or order_item.status == 'return_request' %}
+                  <form action="" method="post">
+                    {% csrf_token %}
+                    {% if order_item.status == 'delivered' %}
+                    <button name="return_btn" value="{{order_item.id}}" class="btn btn-warning " style="color: white;">Request for Return</button>
+                    {% elif order_item.status == 'return_request' %}
+                    <button name="return_cancel_btn" value="{{order_item.id}}" class="btn btn-success" style="color: white;">Cancel Return Request</button>
+                    {% endif %}
+                  </form>
+                  {% else %}
+                  <button id="cancel-btn" class="btn btn-danger" onclick="confirmCancellation('{{ order_item.id }}')">Cancel Order Item</button>
+                  {% endif %}                  
+                </div>
+                {% endif %}
+
+                <div>
+                  <strong>Payment Status:</strong> 
+                  {% if order_item.payment_status == 'success' %}
+                  <span class="payment-status-box ml-2" style="background-color: #098326;">{{order_item.get_payment_status_display}} <i class="bi bi-check-circle-fill"></i></span>  
+                  {% elif order_item.payment_status == 'pending' %}
+                  <span class="payment-status-box ml-2" style="background-color: #b0b01b;">{{order_item.get_payment_status_display}} <i class="bi bi-exclamation-triangle"></i></span>  
+                  {% elif order_item.payment_status == 'cancelled' or order_item.payment_status == 'failed' %}
+                  <span class="payment-status-box ml-2" style="background-color: #dc3545;">{{order_item.get_payment_status_display}} <i class="bi bi-exclamation-circle-fill"></i></span>  
+                  {% elif order_item.payment_status == 'wallet' %}
+                  <span class="payment-status-box ml-2" style="background-color: blueviolet;">{{order_item.get_payment_status_display}} <i class="bi bi-wallet-fill"></i></span>  
+                  {% endif %}
+                </div>
+              </div>
+              <div >
+                <a class="text-dark" style="float: right;" href="#order-policies"><small style="opacity: .7;">cancel/return policies?</small></a>
+              </div>
+              
+          </div>
+      </div>
+  </div>
+  {% endfor %}
+</div>
+
+<div class="container mt-5">
+  <div class="card" id="order-policies">
+      <div class="card-header">
+          <h5>Order Policies</h5>
+      </div>
+      <div class="card-body">
+          <h6 class="card-title">Cancellation and Return Policies</h6>
+          <p class="card-text">
+              Please read the following policies regarding cancellations, return requests, and cancelling return requests:
+          </p>
+          <ul>
+              <li>Amounts will be credited to your wallet in case of cancellation or return of an item.</li>
+              <li>Delivery charges will be deducted from the refunded amount.</li>
+              <li>If a coupon was applied to the order, the coupon amount will also be deducted from the refund.</li>
+              <li>Returns will be accepted only if the seller approves the return request.</li>
+              <li>Returns are not possible after 7 days from the delivery date.</li>
+              <li>Once a return request is cancelled by the user or declined by the admin, the return option will be eliminated for that order.</li>
+          </ul>
+          <p class="card-text">
+              For any further queries, please contact customer care.
+          </p>
+      </div>
+  </div>
+</div>
+{% endblock main_body %}
+
+{% block scripts_profile %}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-icons/1.8.1/font/bootstrap-icons.min.css"></script>
+<script src="https://stackpath.bootstrapcdn.com/bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>
+
+<script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+<script src="{% static 'payment_integration/checkout_page.js' %}" type="text/javascript"></script>
+
+<script>
+  function confirmCancellation(orderItemId) {
+    var userConfirmed = confirm("Are you sure you want to cancel this order item?");
+    if (userConfirmed) {
+        window.location.href = '/my-order-cancel/' + orderItemId + '/';
+    }
+  } 
+
+  var user = '{{request.user}}'
+  var orderIdentifier = '{{order.order_identifier}}'
+  var orderId = '{{order.id}}'
+  function getCookie(name) {
+      let cookieValue = null;
+      if (document.cookie && document.cookie !== '') {
+          const cookies = document.cookie.split(';');
+          for (let i = 0; i < cookies.length; i++) {
+              const cookie = cookies[i].trim();
+              // Does this cookie string begin with the name we want?
+              if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                  cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                  break;
+              }
+          }
+      }
+      return cookieValue;
+  }
+  const csrftoken = getCookie('csrftoken');
+
+</script>
+{% endblock scripts_profile %}

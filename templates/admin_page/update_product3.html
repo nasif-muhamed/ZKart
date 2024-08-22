@@ -1,0 +1,69 @@
+{% extends 'admin_page/layout/main.html' %}
+{% load static %}
+
+{% block header %}
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+{% endblock header %}
+
+
+{% block content %}
+
+<div class="col-sm-12 col-md-12 col-lg-8 col-xl-8 tm-block-col mx-auto mt-5">
+  <div class="tm-bg-primary-dark tm-block tm-block-products" style="min-height: 1000px;">
+    <form method="post">
+      {% csrf_token %}
+
+      <div class="tm-product-table-container">
+
+        <table class="table table-hover tm-table-small tm-product-table">
+            <thead>
+            <tr>
+                
+                <th scope="col">color</th>
+                <th scope="col">size</th>
+                <th scope="col">quantity</th>
+                <th scope="col">status</th>
+
+            </tr>
+            </thead>
+            <tbody>
+
+            {% for variant in variants %}
+            <tr onclick="">
+
+                <td class="tm-product-name">{{variant.color}}</td>
+                <td>{{ variant.size }}</td>
+                <td><input type="number" name="{{variant.id}}" 
+                    {% if variant.quantity %}
+                    value="{{variant.quantity}}"
+                    {% else %}
+                    placeholder="Out of Stock"
+                    {% endif %}
+                    >
+                </td>
+                <td>{{variant.quantity_status}}</td>
+            </tr>
+            {% endfor %}
+
+            </tbody>
+        </table>
+      
+      </div>
+      <!-- table container -->
+      <button type="submit"
+      class="btn btn-primary btn-block text-uppercase mb-3">update product</a>
+    </form>
+  </div>
+</div>
+
+{% endblock content %}
+
+
+{% block post_footer %}
+
+{% endblock post_footer %}
+  
+
+{% block scripts %}
+
+{% endblock scripts %}

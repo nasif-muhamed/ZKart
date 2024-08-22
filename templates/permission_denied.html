@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <title>Permission Denied</title>
+    <link href="https://stackpath.bootstrapcdn.com/bootstrap/5.3.0/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body, html {
+            height: 100%;
+            margin: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: linear-gradient(135deg, #1f1c2c, #928dab);
+        }
+        .permission-denied-container {
+            text-align: center;
+            background: white;
+            padding: 2rem;
+            border-radius: 1rem;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        }
+        .permission-denied-container h1 {
+            font-size: 4rem;
+            margin-bottom: 1rem;
+        }
+        .permission-denied-container p {
+            font-size: 1.25rem;
+            margin-bottom: 1.5rem;
+        }
+        .permission-denied-container a {
+            text-decoration: none;
+            color: white;
+        }
+        .btn-custom {
+            background: #1f1c2c;
+            border: none;
+        }
+        .btn-custom:hover {
+            background: #3a3a5d;
+        }
+        .img-container img {
+            max-width: 100%;
+            height: auto;
+            border-radius: 0.5rem;
+        }
+        .img-container {
+            max-width: 400px;
+            margin: 0 auto 1.5rem auto;
+        }
+    </style>
+</head>
+<body>
+    <div class="permission-denied-container">
+        <div class="img-container mb-4">
+            <img class="img-fluid" src="https://img.freepik.com/premium-vector/access-denied-alert-vector-illustration-design_624938-543.jpg" alt="Permission Denied">
+        </div>
+        <h1 class="display-4">403</h1>
+        <p class="lead">Oops! You do not have permission to access this page.</p>
+        <a href="{% url 'home' %}" class="btn btn-custom btn-lg">Go to Homepage</a>
+    </div>
+
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

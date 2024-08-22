@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Sales Report PDF</title>
+    <style>
+         @page { 
+            size: landscape; 
+            margin: 1cm; 
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        th, td {
+            border: 1px solid black;
+            padding: 4px 0 0 0 ;
+            margin: 0 0 0 0;
+            text-align: center;
+            word-wrap: break-word;
+            
+        }
+        td{
+            font-size: 13px;
+        }
+        th {
+            background-color: #f2f2f2;
+        }
+        .nowrap {
+            white-space: nowrap;
+        }
+        p{
+            font-size: large;
+        }
+
+    </style>
+</head>
+<body>
+    <h5 ><strong>Overall details</strong></h5>
+
+    <p style="color: blue;">Overall Order Count: <strong >{{overall_order_items}}</strong></p>
+    <p style="color: green; padding-left: 5px;">Overall Order Amount: <strong >RS. {{overall_order_amount|floatformat:0}}</strong></p>
+    <p style="color: red;">Overall Order Discount: <strong >RS. {{overall_order_discount|floatformat:0}}</strong></p>
+
+    <h2>Sales Report</h2>
+    <table class="table table-bordered table-hover table-dark">
+        <thead class="thead-dark">
+            <tr>
+                <th style="width: 180px;">Order Id</th>
+                <th class="nowrap" style="width: 100px;">Username</th>
+                <th class="nowrap" style="width: 80px;">Order Date</th>
+                <th class="nowrap" style="width: 70px;">OG Price</th>
+                <th class="nowrap" style="width: 70px;">Sold Price</th>
+                <th class="nowrap" style="width: 40px;">Qty</th>
+                <th class="nowrap" style="width: 170px;">Coupon Applied</th>
+                <th class="nowrap">Total Amount</th>
+                <th class="nowrap">Order Item Status</th>
+                <th class="nowrap">Payment Status</th>
+                <th class="nowrap">Payment Method</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for order_item in order_items %}
+            <tr class="table-light">
+                <td >{{ order_item.order.order_identifier }}</td>
+                <td class="nowrap">{{ order_item.order.customer.user.username }}</td>
+                <td class="nowrap">{{ order_item.order.order_date|date:"d/m/Y" }}</td>
+                <td class="nowrap">{{ order_item.original_price|floatformat:0 }}</td>
+                <td class="nowrap">{{ order_item.selling_price|floatformat:0 }}</td>
+                <td class="nowrap" style="padding: 0; margin: 0;">{{ order_item.quantity }}</td>
+                <td class="nowrap">
+                    {% if order_item.order.coupon %}
+                    {{ order_item.order.coupon.coupon_code }} ({{ order_item.coupon_discount|floatformat:0 }})
+                    {% else %}
+                    'N/A'
+                    {% endif %}
+                </td>
+                <td class="nowrap">{{ order_item.item_grand_total|floatformat:0 }}</td>
+                <td class="nowrap">{{ order_item.status }}</td>
+                <td class="nowrap">{{ order_item.payment_status }}</td>
+                <td class="nowrap">{{ order_item.order.payment_method }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</body>
+</html>

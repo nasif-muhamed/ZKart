@@ -1,0 +1,153 @@
+{% extends 'user_profile/profile_base.html' %}
+{% load static %}
+
+{% block style %}
+<style>
+  .profile-main .form-control[disabled] {
+    background-color: #e9ecef;
+    font-weight: 700;
+  }
+
+  .form-control{
+    background-color: #fff;
+    box-shadow: none;
+    font-weight: 700;
+    border: 1px solid black;
+  }
+
+  .form-control:focus{
+    background-color: #fff;
+    color: #000;
+    box-shadow: none;
+    font-weight: 700;
+  }
+
+  .edit-btn {
+    margin-top: 20px;
+  }
+
+  .not-visible{
+    display: none;
+  }
+
+  .alert-error{
+    background-color: rgba(255, 0, 0, 0.396);
+    color: white;
+  }
+</style>
+{% endblock style %}
+
+{% block main_body %}
+<div class="profile-main container-fluid">
+  <div class="col mb-3 d-flex justify-content-between">
+    <h4>Profile Information</h4>
+    {% if account.is_completed %}
+    <button type="button" id="edit" name="edit"  class="btn btn-warning">Edit</button>
+    {% endif %}
+  </div>
+
+  {% if messages %}
+  <div class="alert-container">
+      {% for message in messages %}
+      <div class="alert alert-{{ message.tags }}" role="alert">
+          {{ message }}
+      </div>
+      {% endfor %}
+  </div>
+  {% endif %}
+
+  <form method="post">
+    {% csrf_token %}
+
+    <div class="col-lg-6 mb-3">
+      <label for="firstName" class="form-label">First Name</label>
+      {% if account.user.first_name %}
+      <input type="text" class="form-control" id="firstName" value="{{account.user.first_name}}" disabled name="first_name">
+      {% else %}
+      <input type="text" class="form-control" id="firstName" placeholder="Enter First Name" required name="first_name">
+      {% endif %}
+    </div>
+
+    <div class="col-lg-6 mb-3">
+      <label for="lastName" class="form-label">Last Name</label>
+      {% if account.user.last_name %}
+      <input type="text" class="form-control" id="lastName" value="{{account.user.last_name}}" disabled name="last_name">
+      {% else %}
+      <input type="text" class="form-control" id="lastName" placeholder="Enter Last Name" required name="last_name">
+      {% endif %}                  
+    </div>
+
+    <div class="col-lg-6 mb-3">
+      <label for="gender" class="form-label">Gender</label>
+      {% if account.gender %}
+      <select style="display: block; width: 100%; padding: 0 15px;" class="form-select form-control" id="gender" name="gender" disabled name="gender">
+        <option value="" {% if not account.gender %}selected{% endif %} >Select Gender</option>
+        <option value="Male" {% if account.gender == 'Male' %}selected{% endif %}>Male</option>
+        <option value="Female" {% if account.gender == "Female" %}selected{% endif %}>Female</option>
+      </select> 
+      {% else %}
+      <select style="display: block; width: 100%; padding: 0 15px;" class="form-select form-control" id="gender" name="gender" required name="gender">
+        <option value="" {% if not account.gender %}selected{% endif %} >Select Gender</option>
+        <option value="Male" {% if account.gender == "Male" %}selected{% endif %}>Male</option>
+        <option value="Female" {% if account.gender == "Female" %}selected{% endif %}>Female</option>
+      </select> 
+      {% endif %}                
+    </div>
+
+    <div class="col-lg-6 mb-3">
+      <label for="dob" class="form-label">Date of Birth</label>
+      {% if account.dob %}
+      <input type="date" class="form-control" id="dob" value="{{ account.dob|date:'Y-m-d' }}" disabled name="dob">
+      {% else %}
+      <input type="date" class="form-control" id="dob" placeholder="Enter your Date of Birth" required name="dob">
+      {% endif %}                  
+    </div>
+
+    <div class="col-lg-12 mb-3">
+      <label for="email" class="form-label">Email</label>
+      <h5>{{user.email}}</h5>
+    </div>
+
+    <div class="col-lg-12 mb-3">
+      <label for="phone" class="form-label">Phone Number</label>
+      {% if account.phone_number %}
+      <input type="number" class="form-control" id="phone" value="{{account.phone_number}}" disabled name="mobile"  min="0" max="9999999999">
+      {% else %}
+      <input type="number" class="form-control" id="phone" placeholder="Enter a valid phone number" required name="mobile" min="0" max="9999999999">
+      {% endif %}
+    </div>
+
+    <div class="col-lg-12 ">
+      
+      {% if account.is_completed %}
+      <button type="submit" class="btn btn-success edit-btn not-visible">
+      save
+      </button>
+      {% else %}
+      <button type="submit" class="btn btn-success edit-btn">
+        Complete Profile
+      </button>
+      {% endif %}
+
+    </div>
+  </form>
+</div>
+
+{% endblock main_body %}
+
+{% block scripts_profile %}
+
+<script>
+
+  document.getElementById('edit').addEventListener('click', function() {
+    var inputs = document.querySelectorAll('form input, form select');
+    inputs.forEach(function(input) {
+      input.removeAttribute('disabled');
+    });
+
+    var saveButton = document.querySelector('.edit-btn');
+    saveButton.classList.remove('not-visible');
+  });
+</script>
+
+{% endblock scripts_profile %}

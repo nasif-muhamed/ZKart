@@ -1,0 +1,77 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+  <link rel="apple-touch-icon" sizes="76x76" href="../assets/img/apple-icon.png">
+  <link rel="icon" type="image/png" href="../assets/img/favicon.png">
+  <title>
+    Zkart Seller
+  </title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="X-UA-Compatible" content="ie=edge">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:400,700">
+  <!-- https://fonts.google.com/specimen/Roboto -->
+  <link rel="stylesheet" href="{% static 'admin_assets/css/fontawesome.min.css' %}">
+  <!-- https://fontawesome.com/ -->
+  <link rel="stylesheet" href="{% static 'admin_assets/css/bootstrap.min.css' %}">
+  <!-- https://getbootstrap.com/ -->
+  <link rel="stylesheet" href="{% static 'admin_assets/css/templatemo-style.css' %}">
+  <!--
+  Product Admin CSS Template
+  https://templatemo.com/tm-524-product-admin
+  -->
+  <!-- icon bootstrap -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+  <link href="https://maxcdn.bootstrapcdn.com/bootstrap/5.3.0/css/bootstrap.min.css" rel="stylesheet">
+
+  <style>
+    .alert-error{
+      background-color: rgba(255, 0, 0, 0.396);
+      color: white;
+    }
+  </style>
+  {% block header %}
+
+  {% endblock header %}
+
+</head>
+<body id="reportsPage" >
+  
+  
+  {% include 'admin_page/include/header.html' %}
+
+  {% block content %}
+
+  {% endblock content %}
+
+  {% include 'admin_page/include/footer.html' %}
+
+  {% block post_footer %}
+
+  {% endblock post_footer %}
+  
+
+
+  <script src="{% static 'admin_assets/js/jquery-3.3.1.min.js' %}"></script>
+  <!-- https://jquery.com/download/ -->
+  <script src="{% static 'admin_assets/js/moment.min.js' %}"></script>
+  <!-- https://momentjs.com/ -->
+  <script src="{% static 'admin_assets/js/Chart.min.js' %}"></script>
+  <!-- http://www.chartjs.org/docs/latest/ -->
+  <script src="{% static 'admin_assets/js/bootstrap.min.js' %}"></script>
+  <!-- https://getbootstrap.com/ -->
+  <script src="{% static 'admin_assets/js/tooplate-scripts.js' %}"></script>
+
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.9.3/dist/umd/popper.min.js"></script>
+<script src="https://maxcdn.bootstrapcdn.com/bootstrap/5.3.0/js/bootstrap.min.js"></script>
+
+  {% block scripts %}
+    
+  {% endblock scripts %}
+
+</body>
+</html>

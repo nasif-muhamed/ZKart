@@ -1,0 +1,243 @@
+{% extends 'layouts/main.html' %}
+{% load static %}
+{% load row_splitter %}
+
+{% block header %}
+<!-- Page level plugin styles START -->
+<link href="{% static 'assets/plugins/fancybox/source/jquery.fancybox.css' %}" rel="stylesheet">
+<link href="{% static 'assets/plugins/owl.carousel/assets/owl.carousel.css' %}" rel="stylesheet">
+<link href="{% static 'assets/plugins/uniform/css/uniform.default.css' %}" rel="stylesheet" type="text/css">
+<link href="http://code.jquery.com/ui/1.10.3/themes/smoothness/jquery-ui.css" rel="stylesheet" type="text/css"><!-- for slider-range -->
+<link href="{% static 'assets/plugins/rateit/src/rateit.css' %}" rel="stylesheet" type="text/css">
+<!-- Page level plugin styles END -->
+
+<style>
+  .img-responsive{
+    height: 250px;
+    width: 100%;
+    object-fit: cover;
+    object-position: top;
+  }
+
+  .product-list .product-item{
+    height: 400px;
+  }
+
+  .product-item h4{
+    font: 700 12px 'Open Sans', sans-serif ;
+    margin: 10px 0;
+  }
+
+  .product-item h3 {
+    font: 300 14px 'Open Sans', sans-serif;
+    margin: 0;
+    padding: 0;
+    height: 65px;
+  }
+
+  .pi-price {
+    font: 18px sans-serif;
+    color: black;
+  }
+
+  .paginator_dot{
+    background-color: transparent !important;
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+  }
+
+  .paginator_dot :hover{
+    background-color: transparent !important;
+  }
+
+  .pagination > li > a{
+    font-weight: 900;
+  }
+
+  .sort_link a{
+    background-color: #000;
+    padding: 10px; 
+    color: white; 
+    font-weight: 700; 
+    text-decoration: none; 
+    border-radius: 10px !important;
+    font-size: 12px;
+  }
+  .sort_link div{
+    margin: 5px 5px;
+  }
+</style>
+
+<style>
+  /* changing wishlist behaviour*/
+  .product-item .add2wishlist {
+    float: right;
+    font-size: medium;
+    color: #a8aeb3;
+    border: none; 
+  }
+
+  .product-item .add2wishlist:hover {
+    color: red !important;
+    background: none !important;
+    border-color: none;
+  }
+</style>
+{% endblock header %}
+
+{% block content %}
+
+<div class="main">
+    <div class="container">
+      <ul class="breadcrumb">
+          <li><a href="{% url 'home' %}">Home</a></li>
+          <li class="active">{{ request.path|split_path|last }}</li>
+      </ul>
+      <!-- BEGIN SIDEBAR & CONTENT -->
+      <div class="row margin-bottom-40">
+        <!-- BEGIN SIDEBAR -->
+        {% include 'product_list_user/sidebar_product_list.html' %}
+        <!-- END SIDEBAR -->
+
+        <!-- BEGIN CONTENT -->
+        <div class="col-md-9 col-sm-7">
+          <div class="row list-view-sorting clearfix">
+            <div class="col-md-12 col-sm-10 sort_link" style="display: flex; align-items: center; flex-wrap: wrap;">
+
+              <div><a href="?form_submitted={{ request.GET.form_submitted }}&search={{ request.GET.search }}&gender={{ request.GET.gender }}{% for i in request|getlist:'category' %}&category={{i}}{%endfor%}{% for i in request|getlist:'brand' %}&brand={{i}}{%endfor%}&price_min={{ request.GET.price_min }}&price_max={{ request.GET.price_max }}&sort=a2z">Name (A - Z)</a></div>
+              
+              <div><a href="?form_submitted={{ request.GET.form_submitted }}&search={{ request.GET.search }}&gender={{ request.GET.gender }}{% for i in request|getlist:'category' %}&category={{i}}{%endfor%}{% for i in request|getlist:'brand' %}&brand={{i}}{%endfor%}&price_min={{ request.GET.price_min }}&price_max={{ request.GET.price_max }}&sort=z2a">Name (Z - A)</a></div>
+
+              <div><a href="?form_submitted={{ request.GET.form_submitted }}&search={{ request.GET.search }}&gender={{ request.GET.gender }}{% for i in request|getlist:'category' %}&category={{i}}{%endfor%}{% for i in request|getlist:'brand' %}&brand={{i}}{%endfor%}&price_min={{ request.GET.price_min }}&price_max={{ request.GET.price_max }}&sort=l2h">Price (Low &gt; High)</a></div>
+
+              <div><a href="?form_submitted={{ request.GET.form_submitted }}&search={{ request.GET.search }}&gender={{ request.GET.gender }}{% for i in request|getlist:'category' %}&category={{i}}{%endfor%}{% for i in request|getlist:'brand' %}&brand={{i}}{%endfor%}&price_min={{ request.GET.price_min }}&price_max={{ request.GET.price_max }}&sort=h2l">Price (High &gt; Low)</a></div>
+
+              <div><a href="?form_submitted={{ request.GET.form_submitted }}&search={{ request.GET.search }}&gender={{ request.GET.gender }}{% for i in request|getlist:'category' %}&category={{i}}{%endfor%}{% for i in request|getlist:'brand' %}&brand={{i}}{%endfor%}&price_min={{ request.GET.price_min }}&price_max={{ request.GET.price_max }}&sort=popular">Popular</a></div>
+
+              <div><a href="?form_submitted={{ request.GET.form_submitted }}&search={{ request.GET.search }}&gender={{ request.GET.gender }}{% for i in request|getlist:'category' %}&category={{i}}{%endfor%}{% for i in request|getlist:'brand' %}&brand={{i}}{%endfor%}&price_min={{ request.GET.price_min }}&price_max={{ request.GET.price_max }}&sort=latest">Newest Arrival</a></div>
+
+              <div><a href="?form_submitted={{ request.GET.form_submitted }}&search={{ request.GET.search }}&gender={{ request.GET.gender }}{% for i in request|getlist:'category' %}&category={{i}}{%endfor%}{% for i in request|getlist:'brand' %}&brand={{i}}{%endfor%}&price_min={{ request.GET.price_min }}&price_max={{ request.GET.price_max }}&sort=latest">Rating (Highest)</a></div>
+        
+            </div>
+          </div>
+
+          {% for product_chunks in products|row_splitter:3 %}
+          <!-- BEGIN PRODUCT LIST -->
+          <div class="row product-list">
+            {% for product in product_chunks %}
+            <!-- PRODUCT ITEM START -->
+            <div class="col-md-4 col-sm-6 col-xs-12">
+              <div class="product-item">
+                <div class="pi-img-wrapper">
+                  <img src="{{ product.product_images.all.0.product_image.url }}" class="img-responsive" alt="Berry Lace Dress">
+                  <div>
+                    <a href="{{ product.product_images.all.0.product_image.url }}" class="btn btn-default fancybox-button">Zoom</a>
+                  </div>
+                </div>
+                <h4>{{ product.brand }}</h4>
+                <h3><a href="{% url 'product_details' product.id %}">{{ product.title }}</a></h3>
+                <div class="pi-price">
+                  <span>₹{{ product.product_selling_price|floatformat:0 }}</span>
+                  <span style="padding-left: 5px; text-decoration: line-through; opacity: 50%;">₹{{ product.original_price|floatformat:0 }}</span>
+                  <span style="padding-left: 5px; font-size: 13px; color: orange;">({{ product.offer_percentage|floatformat:0 }}% OFF)</span>
+                </div>
+
+                <a id="wishlist_tag_{{ product.id }}" href="" class="btn btn-default add2wishlist wishlist-icon" data-product-id="{{ product.id }}" {% if product.id in user_wishlist %} style="color: red;" {% endif %}>
+                  <i class="bi bi-heart-fill"></i>
+                </a>
+
+              </div>
+            </div>
+            <!-- PRODUCT ITEM END -->
+            {% endfor %}
+          </div>
+          <!-- END PRODUCT LIST -->
+          {% endfor %}
+          <!-- BEGIN PAGINATOR -->
+          <div class="row">
+            <div class="col-md-4 col-sm-4 items-info">Items {{products.number}} of {{end}} total</div>
+            <div class="col-md-8 col-sm-8">
+              <ul class="pagination pull-right">
+                <!--
+                {% for page in products.paginator.page_range %}
+                <li><a href="?page={{page}}"><span>{{page}}</span></a></li>
+                {% endfor %}
+                -->
+                {% if products.has_previous %}
+                <li><a href="?form_submitted={{ request.GET.form_submitted }}&search={{ request.GET.search }}&sort={{ request.GET.sort }}&gender={{ request.GET.gender }}{% for i in request|getlist:'category' %}&category={{i}}{%endfor%}{% for i in request|getlist:'brand' %}&brand={{i}}{%endfor%}&price_min={{ request.GET.price_min }}&price_max={{ request.GET.price_max }}&page={{products.previous_page_number}}"
+                   onclick="document.getElementById('previous').classList.add('button_pressed')">&laquo;</a></li>
+                {% endif %}
+                
+                {% if start %}
+                <li><a href="?form_submitted={{ request.GET.form_submitted }}&search={{ request.GET.search }}&sort={{ request.GET.sort }}&gender={{ request.GET.gender }}{% for i in request|getlist:'category' %}&category={{i}}{%endfor%}{% for i in request|getlist:'brand' %}&brand={{i}}{%endfor%}&price_min={{ request.GET.price_min }}&price_max={{ request.GET.price_max }}&page={{start}}">
+                  <span>{{start}}</span></a></li>
+                <li><a class="paginator_dot"><span style="color: #000; font-weight: 700;">· · · ·</span></a></li>
+                {% endif %}
+
+                {% for page in range %}
+                {% if page == products.number %}
+                <li><a style="background-color: black;" href="?form_submitted={{ request.GET.form_submitted }}&search={{ request.GET.search }}&sort={{ request.GET.sort }}&gender={{ request.GET.gender }}{% for i in request|getlist:'category' %}&category={{i}}{%endfor%}{% for i in request|getlist:'brand' %}&brand={{i}}{%endfor%}&price_min={{ request.GET.price_min }}&price_max={{ request.GET.price_max }}&page={{page}}">
+                    <span style="color: white;">{{page}}</span></a></li>
+                {% else %}
+                <li><a href="?form_submitted={{ request.GET.form_submitted }}&search={{ request.GET.search }}&sort={{ request.GET.sort }}&gender={{ request.GET.gender }}{% for i in request|getlist:'category' %}&category={{i}}{%endfor%}{% for i in request|getlist:'brand' %}&brand={{i}}{%endfor%}&price_min={{ request.GET.price_min }}&price_max={{ request.GET.price_max }}&page={{page}}"><span>{{page}}</span></a></li>
+                {% endif %}
+                {% endfor %}
+
+                {% if end %}
+                <li><a class="paginator_dot"><span style="color: #000; font-weight: 700;">· · · ·</span></a></li>
+                <li><a href="?form_submitted={{ request.GET.form_submitted }}&search={{ request.GET.search }}&sort={{ request.GET.sort }}&gender={{ request.GET.gender }}{% for i in request|getlist:'category' %}&category={{i}}{%endfor%}{% for i in request|getlist:'brand' %}&brand={{i}}{%endfor%}&price_min={{ request.GET.price_min }}&price_max={{ request.GET.price_max }}&page={{end}}">
+                  <span>{{end}}</span></a></li>
+                {% endif %}
+
+                {% if products.has_next %}
+                <li><a href="?form_submitted={{ request.GET.form_submitted }}&search={{ request.GET.search }}&sort={{ request.GET.sort }}&gender={{ request.GET.gender }}{% for i in request|getlist:'category' %}&category={{i}}{%endfor%}{% for i in request|getlist:'brand' %}&brand={{i}}{%endfor%}&price_min={{ request.GET.price_min }}&price_max={{ request.GET.price_max }}&page={{products.next_page_number}}">&raquo;</a></li>
+                {% endif %}
+              </ul>
+            </div>
+          </div>
+          <!-- END PAGINATOR -->
+        </div>
+        <!-- END CONTENT -->
+      </div>
+      <!-- END SIDEBAR & CONTENT -->
+    </div>
+  </div>
+
+  <!-- BEGIN BRANDS -->
+  <!-- END BRANDS -->
+{% endblock content %}
+
+
+{% block scripts %}
+<!-- BEGIN PAGE LEVEL JAVASCRIPTS (REQUIRED ONLY FOR CURRENT PAGE) -->
+<script src="{% static 'assets/plugins/fancybox/source/jquery.fancybox.pack.js' %}" type="text/javascript"></script><!-- pop up -->
+<script src="{% static 'assets/plugins/owl.carousel/owl.carousel.min.js' %}" type="text/javascript"></script><!-- slider for products -->
+<script src="{% static 'assets/plugins/zoom/jquery.zoom.min.js' %}" type="text/javascript"></script><!-- product zoom -->
+<script src="{% static 'assets/plugins/bootstrap-touchspin/bootstrap.touchspin.js' %}" type="text/javascript"></script><!-- Quantity -->
+<script src="{% static 'assets/plugins/uniform/jquery.uniform.min.js' %}" type="text/javascript"></script>
+<script src="{% static 'assets/plugins/rateit/src/jquery.rateit.js' %}" type="text/javascript"></script>
+<script src="http://code.jquery.com/ui/1.10.3/jquery-ui.js'" type="text/javascript"></script><!-- for slider-range -->
+
+<script src="{% static 'assets/corporate/scripts/layout.js' %}" type="text/javascript"></script>
+
+<!-- My Script for Wishlist -->
+<script src="{% static 'my_static/wishlist_click.js' %}" type="text/javascript"></script>
+
+<script type="text/javascript">
+  jQuery(document).ready(function() {
+      Layout.init();    
+      Layout.initOWL();
+      Layout.initTwitter();
+      Layout.initImageZoom();
+      Layout.initTouchspin();
+      Layout.initUniform();
+      Layout.initSliderRange();
+  });
+
+  var csrf_token = "{{ csrf_token }}";
+  var toggle_wishlist_url = "{% url 'toggle_wishlist' %}";
+  var user = "{{user}}"
+
+</script>
+<!-- END PAGE LEVEL JAVASCRIPTS -->
+{% endblock scripts %}

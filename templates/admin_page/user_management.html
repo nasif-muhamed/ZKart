@@ -1,0 +1,144 @@
+{% extends 'admin_page/layout/main.html' %}
+{% load static %}
+{% load row_splitter %}
+
+{% block header %}
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+
+{% endblock header %}
+
+{% block content %}
+<div class="container mt-5">
+  <div class="row tm-content-row">
+      <div class="col-sm-12 col-md-12 col-lg-12 col-xl-12 tm-block-col">
+        <div class="col-md-6 my-2">
+          <form method="GET" class="d-flex ">
+            <input class="form-control me-2 bg-light text-dark" type="search" placeholder="Search User" aria-label="Search" name="user_search"
+            {% if user_search and user_search is not None %} value="{{user_search}}" {% endif %}>
+            <button class="btn btn-info ml-2" type="submit">Search</button>
+          </form>
+        </div>
+        
+        <div class="tm-bg-primary-dark tm-block tm-block-products" style="min-height: 1000px;">
+          <h5>Active Users</h5>
+          <div class="tm-product-table-container">
+            <table class="table table-hover tm-table-small tm-product-table">
+                <thead>
+                <tr>
+                  <th scope="col">&nbsp;</th>
+                  <th scope="col">User name</th>
+                  <th scope="col">Contact Email</th>
+                  <th scope="col">Total order</th>
+                  <th scope="col">Created</th>
+                  <th scope="col">&nbsp;</th>
+                </tr>
+                </thead>
+                <tbody>
+
+                {% for user in active_users %}
+                <tr onclick="">
+                    <td scope="row">
+                      <div style="width: 50px; height: 50px; overflow: hidden;">
+                        {% if user.image %}
+                        <img height="50px" width="50px" src="{{ user.image.url }}" alt="profile">
+                        {% else %}
+                        <img height="50px" width="50px" src="https://toolset.com/wp-content/uploads/2018/06/909657-profile_pic.png" alt="profile">
+                        {% endif %}
+                      </div>
+                    </td>
+                    <td class="tm-product-name">{{ user.user.username}}</td>
+                    <td>{{ user.user.email }}</td>
+                    <td>{{user.account_orders.all|length}}</td>
+                    <td>{{ user.created_at|date:"d/m/Y" }}</td>
+                    <td>
+                    <a onclick="showWarning(event, 'user_action', 'delete', '{{user.id}}')" class="tm-product-delete-link" style="display: flex; align-items: center; justify-content: center;">
+                      <i class="bi bi-person-fill-slash" style="font-size: 20px;"></i>
+                    </a>
+                    </td>
+                </tr>
+                {% endfor %}
+
+                </tbody>
+            </table>
+          </div>
+          <!-- table container -->
+
+          <h5 style="font-weight: bold; color: rgb(48, 4, 4); margin: 10px;">Deleted Users</h5>
+
+          <div class="tm-product-table-container" style="max-height: 300px;">
+            <table class="table table-hover tm-table-small tm-product-table">
+                <thead>
+                <tr>
+                    <th scope="col">&nbsp;</th>
+                    <th scope="col">User name</th>
+                    <th scope="col">Contact Email</th>
+                    <th scope="col">Total order</th>
+                    <th scope="col">Created</th>
+                    <th scope="col">&nbsp;</th>
+                </tr>
+                </thead>
+                <tbody>
+
+                {% for user in deleted_users %}
+                <tr onclick=""> 
+                    <td scope="row">
+                      <div style="width: 50px; height: 50px; overflow: hidden;">
+                      {% if user.image %}
+                        <img height="50px" width="50px" src="{{ user.image.url }}" alt="profile">
+                      {% else %}
+                        <img height="50px" width="50px" src="https://toolset.com/wp-content/uploads/2018/06/909657-profile_pic.png" alt="profile">
+                      {% endif %}
+                      </div>
+                    </td>
+                    <td class="tm-product-name">{{ user.user.username}}</td>
+                    <td>{{ user.user.email }}</td>
+                    <td>{{user.account_orders.all|length}}</td>
+                    <td>{{ user.created_at|date:"d/m/Y" }}</td>
+                    <td>
+                    <a onclick="showWarning(event, 'user_action', 'active', '{{user.id}}')" class="tm-product-delete-link" style="display: flex; align-items: center; justify-content: center;">
+                      <i class="bi bi-person-check" style="font-size: 20px;"></i>
+                    </a>
+                    </td>
+                </tr>
+                {% endfor %}
+
+                </tbody>
+            </table>
+          </div>
+
+        </div>
+      </div>
+
+  </div>
+</div>
+{% endblock content %}
+
+{% block scripts %}
+  <script src="js/jquery-3.3.1.min.js"></script>
+  <!-- https://jquery.com/download/ -->
+  <script src="js/bootstrap.min.js"></script>
+  <!-- https://getbootstrap.com/ -->
+  <script>
+    /*
+    function goToPage(url, productId) {
+      window.location.href = `/product_management/${url}/${productId}/`;
+    }
+    */
+        
+    function showWarning(event, url, action, userId) {
+      event.preventDefault(); // Prevent the default link click behavior
+      event.stopPropagation();
+      if (action == 'delete'){
+        if (confirm("Are you sure you want to bloack this user?")) {
+          window.location.href =  `/user_management/${url}/${action}/${userId}/` ; // Redirect to the delete URL if confirmed
+        }
+      }else if(action == 'active'){
+        if (confirm("Are you sure you want to unbloack this user?")) {
+          window.location.href =  `/user_management/${url}/${action}/${userId}/` ; // Redirect to the delete URL if confirmed
+        }
+      }
+      
+    }
+    
+  </script>
+{% endblock scripts %}

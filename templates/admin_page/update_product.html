@@ -1,0 +1,145 @@
+{% extends 'admin_page/layout/main.html' %}
+{% load static %}
+
+{% block content %}
+
+{% if messages %}
+<div class="alert-container">
+    {% for message in messages %}
+    <div class="alert alert-{{ message.tags }}" role="alert">
+        {{ message }}
+    </div>
+    {% endfor %}
+</div>
+{% endif %}
+
+<div class="container tm-mt-big tm-mb-big">
+  <div class="row">
+    <div class="col-xl-9 col-lg-10 col-md-12 col-sm-12 mx-auto">
+      <div class="tm-bg-primary-dark tm-block tm-block-h-auto">
+        <div class="row">
+          <div class="col-12">
+            <h2 class="tm-block-title d-inline-block">Update Product</h2>
+          </div>
+        </div>
+        <div class="row tm-edit-product-row">
+          <div class="col-xl-6 col-lg-6 col-md-12">
+            <form action="" method="post" class="tm-edit-product-form" enctype="multipart/form-data">
+              {% csrf_token %}
+              <div class="form-group mb-3">
+                <label for="name">Product Title
+                </label>
+                <input id="name" name="title" type="text" value="{{ product.title }}" class="form-control validate" />
+              </div>
+              <div class="form-group mb-3">
+                <label for="description">Description</label>
+                <textarea name="description" class="form-control validate tm-small" rows="5"
+                  required>{{ product.description }}</textarea>
+              </div>
+              <div class="form-group mb-3">
+                <label for="category">Category</label>
+                <input id="category" name="category" type="text" value="{{ product.category }}" class="form-control validate text-dark" disabled/>
+              </div>
+              <div class="row">
+                <div class="form-group mb-3 col-xs-12 col-sm-6">
+                  <label for="original_price">Original Price
+                  </label>
+                  <input id="original_price" name="original_price" type="number" class="form-control validate"
+                    value="{{product.original_price|floatformat:0}}" required />
+                </div>
+                <div class="form-group mb-3 col-xs-12 col-sm-6">
+                  <label for="selling_price">Selling Price
+                  </label>
+                  <input id="selling_price" name="selling_price" type="number" class="form-control validate"
+                    value="{{product.selling_price|floatformat:0}}" required />
+                </div>
+              </div>
+
+          </div>
+
+          <div class="col-xl-6 col-lg-6 col-md-12 mx-auto mb-4">
+
+            <div class="form-group mt-2 mb-3">
+              <label for="gender">Gender</label>
+              <select class="custom-select tm-select-accounts" id="gender" name="gender" required>
+                <option value="">Select Gender</option>
+                {% if product.gender == 'M' %}
+                <option selected value="M">Male</option>
+                {% else %}
+                <option value="M">Male</option>
+                {% endif %}
+
+                {% if product.gender == 'F' %}
+                <option selected value="F">Female</option>
+                {% else %}
+                <option value="F">Female</option>
+                {% endif %}
+
+                {% if product.gender == 'B' %}
+                <option selected value="B">Boys</option>
+                {% else %}
+                <option value="B">Boys</option>
+                {% endif %}
+
+                {% if product.gender == 'GI' %}
+                <option selected value="GI">Girls</option>
+                {% else %}
+                <option value="GI">Girls</option>
+                {% endif %}
+
+                {% if product.gender == 'U' %}
+                <option selected value="U">Unisex</option>
+                {% else %}
+                <option value="U">Unisex</option>
+                {% endif %}
+
+                {% if product.gender == 'G' %}
+                <option selected value="G">Genaral</option>
+                {% else %}
+                <option value="G">Genaral</option>
+                {% endif %}
+              </select>
+            </div>
+
+            <div class="form-group mb-3 mt-4" style="width: 100%;">
+              <label for="brand">Brand
+              </label>
+              <input id="brand" name="brand" type="brand" class="form-control validate text-dark" value="{{ product.brand }}"
+                disabled />
+            </div>
+
+            <div class="form-group mt-5">
+              <label for="max_purchase_qty">Max purchase quantity</label>
+              <input id="max_purchase_qty" name="max_purchase_qty" type="number" min="1" class="form-control validate"
+              value="{{ product.max_purchase_qty }}" />
+            </div>
+
+          </div>
+
+          <div class="col-12">
+            <button type="submit" class="btn btn-primary btn-block text-uppercase">Next page</button>
+          </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock content %}
+
+
+{% block scripts %}
+<script src="js/jquery-3.3.1.min.js"></script>
+<!-- https://jquery.com/download/ -->
+<script src="jquery-ui-datepicker/jquery-ui.min.js"></script>
+<!-- https://jqueryui.com/download/ -->
+<script src="js/bootstrap.min.js"></script>
+<!-- https://getbootstrap.com/ -->
+<script>
+  $(function () {
+    $("#expire_date").datepicker({
+      defaultDate: "10/22/2020"
+    });
+  });
+</script>
+{% endblock scripts %}

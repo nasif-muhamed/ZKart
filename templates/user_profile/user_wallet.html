@@ -1,0 +1,293 @@
+{% extends 'user_profile/profile_base.html' %}
+{% load static %}
+{% load row_splitter %}
+
+{% block style %}
+<link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:400,700">
+<style>
+    body {
+        font-family: 'Roboto', sans-serif;
+        background-color: #f8f9fa;
+    }
+    td{
+        white-space: nowrap;
+    }
+    .wallet-card {
+        /* background: url('https://cdn3.vectorstock.com/i/1000x1000/39/42/user-profile-with-coin-line-icon-online-wallet-vector-33343942.jpg') no-repeat center center;
+        background-size: cover; */
+        background-color: black;
+        border-radius: 10px;
+        color: white;
+        padding: 20px;
+        margin-top: 20px;
+    }
+    .wallet-balance {
+        font-size: 2rem;
+        font-weight: bold;
+    }
+
+    .table-responsive {
+        overflow-x: auto;
+        overflow-y: auto;
+        max-width: 100%;
+        max-height: 50vh; 
+    }
+
+    img {
+        max-width: 120px;
+        margin-right: 20px;
+    }
+
+    .transaction-table th, .transaction-table td {
+        vertical-align: middle;
+    }
+    
+	.order-item-status-box {
+        padding: 5px 10px;
+        border-radius: 5px;
+        color: white;
+    }
+	.order-item-status-box-progress {
+        background-color: #007bff;
+    }
+    .order-item-status-box-success {
+        background-color: #098326;
+    }
+    .order-item-status-box-ship {
+        background-color: #b0b01b;
+    }
+    .order-item-status-box-danger {
+        background-color: #dc3545;
+    }
+	.wallet-color{
+		background-color: blueviolet;
+	}
+	.dark-color{
+		background-color: black;
+	}
+
+    tbody{
+        background-color: white;
+    }
+
+</style>
+{% endblock style %}
+
+{% block main_body %}
+<div class="row">
+    <div class="container">
+        {% if messages %}
+        <div class="alert-container">
+            {% for message in messages %}
+            <div class="alert alert-{{ message.tags }}" role="alert">
+                {{ message }}
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+      
+        <div class="row justify-content-center">
+            <div class="col-md-8">
+                <div class="wallet-card text-center">
+
+                    <h2 style="color: blueviolet;"><strong>My Wallet</strong></h2>
+                    <i class="bi bi-wallet-fill" style="font-size: xx-large;"></i>
+                    {% if wallet.balance %}
+                    <p class="wallet-balance">₹ {{wallet.balance|floatformat:0}}</p>
+                    {% else %}
+                    <p class="wallet-balance">Your Wallet is Empty</p>
+                    {% endif %}
+                    <button class="btn btn-primary" data-toggle="modal" data-target="#addMoneyModal" disabled>Add Money</button>
+                </div>
+            </div>
+        </div>
+
+        {% if shopping_history %}
+        <div class="row justify-content-center mt-4">
+            
+            <div class="col-md-12">
+                <h5>Shopping History</h5>
+
+                <div class="table-responsive">
+                    
+                    <table class="table table-striped transaction-table">
+                        
+                        <thead class="thead-dark">
+                            <tr>
+                                <th>Order Id</th>
+                                <th>Date</th>
+                                <th>Amount</th>
+                                <th>Coupon Applied</th>
+                                <th>Order Items</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for order in shopping_history %}
+                            <tr>
+                                <td>
+                                    <a href="{% url 'user_order_details' order.id %}">
+                                        {{order.order_identifier}}
+                                    </a>
+                                </td>
+                                <td>
+                                    {% if order.is_completed %}
+                                    {{order.complete_date|date:"F j, Y"}}
+                                    {% else %}
+                                    Not Completed Yet
+                                    {% endif %}
+                                </td>
+                                <td style="color: red;">-₹ {{order.order_total_amount|floatformat:0}}</td>
+                                <td>
+                                    {% if order.coupon %}
+                                    ₹ {{order.coupon_discount|floatformat:0}} ({{order.coupon}})
+                                    {% else %}
+                                    No Coupon Applied
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% for item in order.order_items.all %}
+                                    <p>{{item.product_variant.product|truncatechars:50}}</p>
+                                    {% endfor %}
+                                </td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="5" class="text-center"><strong>No Refunds yet.</strong></td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+    
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
+        {% if history %}
+        <div class="row justify-content-center mt-4">
+            
+            <div class="col-md-12">
+                <h5>Refund History</h5>
+
+                <div class="table-responsive">
+                    
+                    <table class="table table-striped transaction-table">
+                        
+                        <thead class="thead-dark">
+                            <tr>
+                                <th>Order Id</th>
+                                <th>Date</th>
+                                <th>Status</th>
+                                <th>Amount</th>
+                                <th>Coupon Deduction</th>
+                                <th>Order Item</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for item in history %}
+                            <tr>
+                                <td>
+                                    <a href="{% url 'user_order_details' item.order.id %}">
+                                        {{item.order.order_identifier}}
+                                    </a>
+                                </td>
+                                <td>
+                                    {% if item.status == 'cancelled' %}
+                                    {{item.completed_date|date:"F j, Y"}}
+                                    {% elif item.status == 'returned' %}
+                                    {{item.return_date|date:"F j, Y"}}
+                                    {% endif %}
+                                </td>
+                                <td><strong>{{item.get_status_display}}</strong></td>
+                                <td style="color: green;">+₹ {{item.item_grand_total|floatformat:0}}</td>
+                                <td >
+                                    {% if item.coupon_discount %}
+                                    ₹ {{item.coupon_discount|floatformat:0}} ({{item.order.coupon}})
+                                    {% else %}
+                                    No Coupon Applied
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <p>{{item.product_variant.product|truncatechars:50}}</p>
+                                </td>
+
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="5" class="text-center"><strong>No Refunds yet.</strong></td>
+                            </tr>
+                            {% endfor %}
+    
+                        </tbody>
+                    </table>
+    
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
+        {% if account.referrals.all %}
+        <div class="row">
+            <div class="mt-5 col">
+                <h5>Referral History</h5>
+                <table class="table table-bordered table-striped  mt-3">
+                    <thead class="table-dark">
+                        <tr>
+                            <th>Username</th>
+                            <th>Points Earned</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for referral in account.referrals.all %}
+                        <tr>
+                            <td>{{ referral.user.username }}</td>
+                            <td style="color: green;">+₹100</td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="2" class="text-center"><strong>No referrals yet.</strong></td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        {% endif %}
+
+    </div>
+    
+    <!-- Add Money Modal -->
+    <div class="modal fade" id="addMoneyModal" tabindex="-1" role="dialog" aria-labelledby="addMoneyModalLabel" aria-hidden="true">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="addMoneyModalLabel">Add Money to Wallet</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <form>
+                        <div class="form-group">
+                            <label for="amount">Amount</label>
+                            <input type="number" class="form-control" id="amount" placeholder="Enter amount">
+                        </div>
+                        <button type="submit" class="btn btn-primary">Add Money</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+</div>
+{% endblock main_body %}
+
+{% block scripts_profile %}
+<script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.5.4/dist/umd/popper.min.js"></script>
+<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+<script>
+
+</script>
+{% endblock scripts_profile %}

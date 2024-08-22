@@ -1,0 +1,98 @@
+{%load static%}
+{% load row_splitter %}
+ 
+<!-- Pre Header -->
+<div class="pre-header">
+    <div class="container">
+        <div class="row">
+            <!-- BEGIN TOP BAR LEFT PART -->
+            <div class="col-md-6 col-sm-6 additional-shop-info">
+                <ul class="list-unstyled list-inline">
+                </ul>
+            </div>
+            <!-- END TOP BAR LEFT PART -->
+            <!-- BEGIN TOP BAR MENU -->
+            <div class="col-md-6 col-sm-6 additional-nav">
+                <ul class="list-unstyled list-inline pull-right">
+                    <li><a href="{% url 'wishlist' %}"><strong>My Wishlist</strong></a></li>
+                    {% if user.is_authenticated and not user.is_staff %}
+                    <li><a href="{% url 'user_profile' %}"><strong>profile</strong></a></li>
+                    <li><a href="{% url 'logout' %}"><strong>Log out</strong></a></li>
+                    {% else %}
+                    <li><a href="{% url 'login' %}"><strong>Log In</strong></a></li>
+                    <li><a href="{% url 'register' %}"><strong>register</strong></a></li>
+                    {% endif %}
+                  </ul>
+            </div>
+            <!-- END TOP BAR MENU -->
+        </div>
+    </div>        
+</div>
+
+<!-- Header -->
+<div class="header">
+  <a class="site-logo" style="position: absolute; left: 2%; width: 5%;" href="{% url 'home' %}">
+    <img width="100%" src="{% static 'images_other/zkart_logo.png' %}" alt="logo">
+  </a>
+    <div class="container">
+      <a href="javascript:void(0);" class="mobi-toggler"><i class="fa fa-bars"></i></a>
+
+      <!-- BEGIN CART -->
+      <div class="top-cart-block">
+        <a href="">
+          <div class="top-cart-info">
+            {% if user.is_authenticated and not user.is_staff %}
+            <a href="{% url 'cart' %}" class="top-cart-info-count">{{user|get_new_order_quantity}}</a>
+            <a href="{% url 'cart' %}" class="top-cart-info-value">₹ {{user|get_new_order_amount|floatformat:0}}</a>
+            {% endif %}
+          </div>
+        <i class="fa fa-shopping-cart"></i>
+        </a>
+      </div>
+      <!--END CART -->
+
+      <!-- BEGIN NAVIGATION -->
+      <div class="header-navigation">
+        <ul>
+          <li >
+            <a class="dropdown-toggle"  href="{% url 'search_list' 'men' %}">
+              Men
+            </a>
+          </li>
+
+          <li >
+            <a class="dropdown-toggle"  href="{% url 'search_list' 'women' %}">
+              Women
+            </a>
+          </li>
+          <li><a href="{% url 'search_list' 'unisex' %}">Kids</a></li>
+          <li class="dropdown dropdown100 nav-catalogue">
+            <a class="dropdown-toggle"  href="{% url 'search_list' 'latest' %}">
+              New
+            </a>
+          </li>
+          <li >
+            <a class="dropdown-toggle"  href="{% url 'search_list' %}?search=&sort=popular">
+              Trending 
+            </a>
+          </li>
+
+          <!-- BEGIN TOP SEARCH -->
+          <li class="menu-search">
+            <span class="sep"></span>
+            <i class="fa fa-search search-btn"></i>
+            <div class="search-box">
+              <form method="get" action="{% url 'search_list' %}" >
+                <div class="input-group">
+                  <input type="text" placeholder="Search" class="form-control" name="search">
+                  <button class="" type="submit">Search</button>
+                </div>
+              </form>
+            </div> 
+          </li>
+          <!-- END TOP SEARCH -->
+        </ul>
+      </div>
+      <!-- END NAVIGATION -->
+    </div>
+</div>

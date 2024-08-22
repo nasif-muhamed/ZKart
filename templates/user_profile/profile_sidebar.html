@@ -1,0 +1,31 @@
+
+
+<div class="col-md-3">
+  <div class="profile-sidebar">
+    <div class="profile-img">
+      <a href="">
+        {% if user.account.image %} 
+        <img src="{{user.account.image.url}}" alt="Profile Photo">
+        {% else %}
+        <img height="150px" width="150px" src="https://cdn.pixabay.com/photo/2015/10/05/22/37/blank-profile-picture-973460_960_720.png" alt="Profile Photo">
+        {% endif %}
+      </a>
+      
+      <h6 class="mt-3">Hi, <strong> @{{user.username}} </strong></h6>
+    </div>
+    <div>
+      <ul class="profile-links">
+        <li><a href="{% url 'user_profile' %}">Profile Information</a></li>
+        <li><a href="{% url 'user_orders_page' %}">My Orders</a></li>
+        <li><a href="{% url 'address_management' %}">Manage Address</a></li>
+        <li><a href="{% url 'wishlist' %}">Wish List</a></li>
+        <li><a href="{% url 'wallet' %}">My Wallet</a></li>
+        <li><a href="{% url 'referral' %}">Referrals</a></li>
+        <li><a href="{% url 'reset_password' %}">Change Password</a></li>
+      </ul>
+    </div>
+    <div class="logout-btn">
+      <a href="{% url 'logout' %}" class="btn btn-danger">Logout</a>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,123 @@
+{% extends 'admin_page/layout/main.html' %}
+{% load static %}
+
+{% block header %}
+
+{% endblock header %}
+
+{% block content %}
+<div class="container tm-mt-big tm-mb-big">
+  {% if messages %}
+  <div class="alert-container">
+      {% for message in messages %}
+      <div class="alert alert-{{ message.tags }}" role="alert">
+          {{ message }}
+      </div>
+      {% endfor %}
+  </div>
+  {% endif %}
+
+  <div class="row">
+    <div class="col-xl-9 col-lg-10 col-md-12 col-sm-12 mx-auto">
+      <div class="tm-bg-primary-dark tm-block tm-block-h-auto">
+        <div class="row">
+          <div class="col-12">
+            <h2 class="tm-block-title d-inline-block">Add Product</h2>
+          </div>
+        </div>
+
+        <div class="row tm-edit-product-row">
+          <div class="col-xl-6 col-lg-6 col-md-12">
+
+            <form action="" method="post" class="tm-edit-product-form" enctype="multipart/form-data">
+              {% csrf_token %}
+              <div class="form-group mb-3">
+                <label for="title">Product Title
+                </label>
+                <input id="title" name="title" type="text" class="form-control validate" required />
+              </div>
+
+              <div class="form-group mb-3">
+                <label for="description">Description</label>
+                <textarea name="description" id="description" class="form-control validate" rows="3"
+                  required></textarea>
+              </div>
+
+              <div class="form-group mb-3">
+                <label for="category">Category</label>
+                <select class="custom-select tm-select-accounts" id="category" required name="category">
+                  <option value="">Select category</option>
+                  {% for cat in categories %}
+
+                  <option value="{{cat}}">{{cat}}</option>
+
+                  {% endfor %}
+                </select>
+              </div>
+
+              <div class="row">
+                <div class="form-group mb-3 col-xs-12 col-sm-6">
+                  <label for="original_price">Original Price
+                  </label>
+                  <input id="original_price" name="original_price" type="number" min="0" class="form-control validate"
+                    required />
+                </div>
+
+                <div class="form-group mb-3 col-xs-12 col-sm-6">
+                  <label for="selling_price">Selling Price
+                  </label>
+                  <input id="selling_price" name="selling_price" type="number" class="form-control validate" required />
+                </div>
+              </div>
+
+              </div>
+              <div class="col-xl-6 col-lg-6 col-md-12 mx-auto mb-4">
+
+                <div class="form-group mb-3">
+                  <label for="brand">Brand</label>
+                  <input id="brand" name="brand" type="brand" class="form-control validate" style="width: 100%;" required />
+                </div>
+
+                <div class="form-group mt-5 mb-3">
+                  <label for="gender">Gender</label>
+                  <select class="custom-select tm-select-accounts" id="gender" name="gender" required>
+                    <option value="">Select Gender</option>
+                    <option value="M">Male</option>
+                    <option value="F">Female</option>
+                    <option value="B">Boys</option>
+                    <option value="GI">Girls</option>
+                    <option value="U">Unisex</option>
+                    <option value="G">Genaral</option>
+                  </select>
+                </div>
+                
+                <div class="form-group mt-5 ">
+                  <label for="max_purchase_qty">Max purchase quantity</label>
+                  <input id="max_purchase_qty" name="max_purchase_qty" type="number" min="1" class="form-control validate" />
+                </div>
+              </div>
+
+              <div class="col-12">
+                <button type="submit" class="btn btn-primary btn-block text-uppercase">Next Page</button>
+              </div>
+
+            </form>
+          </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock content %}
+
+{% block scripts %}
+<script src="js/jquery-3.3.1.min.js"></script>
+<!-- https://jquery.com/download/ -->
+<script src="jquery-ui-datepicker/jquery-ui.min.js"></script>
+<!-- https://jqueryui.com/download/ -->
+<script src="js/bootstrap.min.js"></script>
+<!-- https://getbootstrap.com/ -->
+
+<script>
+
+</script>
+{% endblock scripts %}

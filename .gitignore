@@ -1,0 +1,3 @@
+zkart/.env
+*.pyc
+db.sqlite3

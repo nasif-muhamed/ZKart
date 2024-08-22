@@ -1,0 +1,105 @@
+{% extends 'admin_page/layout/main.html' %}
+{% load static %}
+
+{% block header %}
+
+<style>
+    .table-container {
+        overflow-x: auto;
+        overflow-y: auto;
+        max-width: 100%;
+        max-height: 70vh; 
+    }
+
+    .discount-type strong{
+        color: rgb(97, 202, 97);
+    }
+
+    .min-amount{
+        color: rgb(102, 16, 16);
+    }
+
+</style>
+{% endblock header %}
+
+
+{% block content %}
+
+{% if messages %}
+<div class="alert-container">
+    {% for message in messages %}
+    <div class="alert alert-{{ message.tags }}" role="alert">
+        {{ message }}
+    </div>
+    {% endfor %}
+</div>
+{% endif %}
+
+<div class="container-fluid bg-light p-5">
+    <div class="container">
+        <h3 class="mb-4"><strong>Manage Coupons</strong></h3>
+        <div class="d-flex justify-content-between mb-4">
+            <div class="col-md-6 ">
+                <form class="d-flex" method="get" role="search">
+                    <input name="search" class="form-control me-2 bg-dark" type="search" placeholder="Search" aria-label="Search" 
+                    {% if search %} value="{{search}}" {% endif %}>
+                    <button class="btn btn-success ml-3" type="submit">Search</button>
+                </form>      
+            </div>            
+            <a href="{% url 'add_new_coupon' %}" class="btn btn-success" style="border-radius: 20px;"> Add Coupon </a>    
+        </div>
+    
+        <div class="table-container">
+            <table class="table table-striped">
+                <thead>
+                    <tr class="bg-dark">
+                        <th scope="col">Coupon Code</th>
+                        <th scope="col">Min Amount</th>
+                        <th scope="col">Discount</th>
+                        <th scope="col">Status</th>
+                        <th scope="col">Description</th>
+                        <th scope="col">Update</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for coupon in coupons %}
+                    <tr>
+                        <td>{{coupon.coupon_code}}</td>
+                        <td class="min-amount"><strong>₹ {{coupon.minimum_amount|floatformat:0}}</strong></td>
+                        <td class="discount-type" style="white-space: nowrap">
+                            {% if coupon.type == 'percentage' %}
+                            <p>Type: Percentage</p>
+                            <strong>{{coupon.discount}}%</strong>
+                            {% elif coupon.type == 'amount' %}
+                            <p>Type: Amount</p>
+                            <strong>₹ {{coupon.discount}}</strong>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if coupon.is_expired %}
+                            <span class="btn-danger px-3 py-1">Inactive</span>
+                            {% else %}
+                            <span class="btn-success px-3 py-1">Active</span>
+                            {% endif %}
+                        </td>
+                        <td>{{coupon.description}}</td>
+                        <td><a href="{% url 'update_coupon' coupon.id %}" style="border-radius: 10px;" class="btn btn-primary btn-sm">Update</a></td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock content %}
+
+
+{% block post_footer %}
+
+{% endblock post_footer %}
+  
+
+{% block scripts %}
+
+
+{% endblock scripts %}

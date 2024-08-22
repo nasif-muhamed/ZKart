@@ -1,0 +1,199 @@
+{% extends 'admin_page/layout/main.html' %}
+{% load static %}
+
+{% block header %}
+
+<!-- cropper.css -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropper/4.1.0/cropper.min.css"/>
+
+<style>
+  .not-visible{
+     display: none;
+  }
+</style>
+
+{% endblock header %}
+
+{% block content %}
+<div class="container tm-mt-big tm-mb-big">
+
+  <div class="row">
+    <div class="col-xl-12 col-lg-12 col-md-12 col-sm-12 ">
+      <div class="tm-bg-primary-dark tm-block tm-block-h-auto">
+        <div class="row">
+          <div class="col-12">
+            <h2 class="tm-block-title d-inline-block">Update Product</h2>
+          </div>
+        </div>
+
+        <div class="row tm-edit-product-row">
+              <div class="col-xl-8 col-lg-6 col-md-12">
+
+                <div class="row mx-auto ">
+
+                  <div id="alert-box"></div>
+                  <div class="mt-3" id="image-box"></div>
+                  <!--
+                  <div class="custom-file  mb-3" id="imageContainer">
+                    <form action="{% url 'image_saver' product_id %}" id="image-form">
+                      {% csrf_token %}
+                      
+                      <input type="file" class="btn btn-primary btn-block mx-auto" id="id_file" name="image" required />
+                    </form>
+                  </div>
+                  -->
+                  <div>
+                    <button type="button" class="btn btn-success mt-3 not-visible" id="confirm-btn">Confirm</button>
+                  </div>
+
+                  <div class="row">
+                    <form action="" method="post" enctype="multipart/form-data">
+                      {% csrf_token %}
+                  
+                    {% for product in product_images %}
+                    <div class="tm-product-img-edit mx-auto mb-5 col-xl-6 col-lg-6 col-md-12">
+                      <img src="{{ product.product_image.url }}" alt="Product image" class="img-fluid d-block mx-auto">
+                      <div class="custom-file  mb-3">
+                        <label for="image">Upload Image</label>
+                        <input type="file" class="btn btn-primary btn-block mx-auto" value=" {{ product.product_image }} " id="image" name="{{product.id}}" />
+                      </div>
+                    </div>
+                    {% endfor %}
+
+                  </div>
+
+                </div>
+
+              </div>
+              
+
+              <div class="col-xl-4 col-lg-6 col-md-12">
+                
+                  <label for="colors">Add Colors</label>
+                  <select class="custom-select tm-select-accounts" id="colors" name="colors" multiple>
+                    {% for color in colors %}
+
+                    {% if color not in variants_colors %}
+                    <option value="{{color}}">{{color}}</option>
+                    {% endif %}
+
+                    {% endfor %}
+                  </select>
+
+
+                  <label class="mt-5" for="sizes">Add Sizes</label>
+                  <select class="custom-select tm-select-accounts " id="sizes" name="sizes" multiple>
+                  {% for size in sizes %}
+
+                  {% if size not in variants_sizes %}
+                  <option value="{{size}}" >{{size}}</option>
+                  {% endif %}
+
+                  {% endfor %}
+                  </select>
+
+              </div>
+
+              <div class="col-12 mt-5">
+                <button type="submit" class="btn btn-primary btn-block text-uppercase">Next page</button>
+                </form>
+              </div>
+                
+            
+          </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock content %}
+
+{% block scripts %}
+<script src="js/jquery-3.3.1.min.js"></script>
+<!-- https://jquery.com/download/ -->
+<script src="jquery-ui-datepicker/jquery-ui.min.js"></script>
+<!-- https://jqueryui.com/download/ -->
+<script src="js/bootstrap.min.js"></script>
+<!-- https://getbootstrap.com/ -->
+
+<!-- Jquery -->
+<script src="https://code.jquery.com/jquery-3.7.1.min.js" integrity="sha256-/JqT3SQfawRcv/BIHPThkBvs0OEvtFFmqPF/lYI/Cxo=" crossorigin="anonymous"></script>
+
+<!-- cropper.js -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/cropper/4.1.0/cropper.min.js"></script>
+
+<script>
+
+
+  /*
+  const alertBox = document.getElementById('alert-box')
+  const imagetBox = document.getElementById('image-box')
+  const imageForm = document.getElementById('image-form')
+  const confirmBtn = document.getElementById('confirm-btn')
+  const input = document.getElementById('id_file')
+  const csrf = document.getElementsByName('csrfmiddlewaretoken')
+
+  input.addEventListener('change', ()=>{
+    
+    confirmBtn.classList.remove('not-visible')
+
+    const img_data = input.files[0]
+    const url = URL.createObjectURL(img_data)
+  
+    imagetBox.innerHTML = `<img src="${url}" id="image" width="100%">`
+
+    var $image = $('#image');
+
+    $image.cropper({
+      aspectRatio: 12 / 16,
+      crop: function(event) {
+        console.log(event.detail.x);
+        console.log(event.detail.y);
+        console.log(event.detail.width);
+        console.log(event.detail.height);
+        console.log(event.detail.rotate);
+        console.log(event.detail.scaleX);
+        console.log(event.detail.scaleY);
+      }
+    });
+
+    // Get the Cropper.js instance after initialized
+    var cropper = $image.data('cropper');
+
+    
+
+    confirmBtn.addEventListener('click', ()=>{
+      cropper.getCroppedCanvas().toBlob((blob)=>{
+        const fd = new FormData()
+        fd.append('csrfmiddlewaretoken', csrf[0].value)
+        fd.append('image', blob, 'my-image.png')
+    
+        $.ajax({
+          type: 'POST',
+          url: imageForm.action,
+          enctype: 'multipart/form-data',
+          data: fd,
+          success: function(response){
+            console.log(response)
+            alertBox.innerHTML = `<div class="alert alert-success" role="alert">
+                                    Selected image saved successfully
+                                  </div>`
+          },
+          error: function(error){
+            console.log(error)
+            alertBox.innerHTML = `<div class="alert alert-danger" role="alert">
+                                    Oops... something went wrong!!
+                                  </div>`
+          },
+          cache: false,
+          contentType: false,
+          processData: false,
+        })
+      })
+      
+    })
+
+  })
+ */
+</script>
+
+{% endblock scripts %}

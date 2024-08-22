@@ -1,0 +1,270 @@
+{% extends 'admin_page/layout/main.html' %}
+{% load static %}
+
+{% block header %}
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+<style>
+  .table{
+    overflow-x: scroll;
+
+  }
+
+  table td{
+    white-space: nowrap !important;
+    text-align: center;
+  }
+
+  .tm-block-product-categories,
+  .tm-block{
+    max-height: none;
+    height: fit-content;
+  }
+
+</style>
+{% endblock header %}
+
+{% block content %}
+<div class="container-fluid mt-5">
+  {% if messages %}
+  <div class="alert-container">
+      {% for message in messages %}
+      <div class="alert alert-{{ message.tags }}" role="alert">
+          {{ message }}
+      </div>
+      {% endfor %}
+  </div>
+  {% endif %}
+
+  <div class="row tm-content-row">
+      <div class="col-sm-12 col-md-12 col-lg-8 col-xl-8 tm-block-col">
+        <div class="tm-bg-primary-dark tm-block tm-block-products" style="min-height: fit-content">
+          <div class="col-md-6 m-2">
+            <form method="GET" class="d-flex ">
+              <input class="form-control me-2 bg-light text-dark" type="search" placeholder="Search Products" aria-label="Search" name="product_search"
+              {% if product_search and product_search is not None %} value="{{product_search}}" {% endif %}>
+              <button class="btn btn-info ml-2" type="submit">Search</button>
+            </form>
+          </div>
+
+          <div class="tm-product-table-container">
+            <table class="table table-hover tm-table-small tm-product-table">
+                <thead>
+                <tr>
+                    <th >&nbsp;</th>
+                    <th >PRODUCT NAME</th>
+                    <th >Total Stock</th>
+                    <th >Original Price</th>
+                    <th >Offer Price</th>
+                    <th >Product Offer</th>
+                    <th >Category Offer</th>
+                    <th >Last updated</th>
+                    <th >&nbsp;</th>
+                </tr>
+                </thead>
+                <tbody>
+
+                {% for product in active_products %}
+                <tr onclick="goToPage('update_product', '{{ product.id }}' )">
+                    <td scope="row">
+                      <div style="width: 50px; height: 50px; overflow: hidden;">
+                        <img height="50px" width="50px" src="{{ product.product_images.all.0.product_image.url }}" alt="product">
+                      </div>
+                    </td>
+                    <td class="tm-product-name">{{product.title}}</td>
+                    <td>
+                      <a href="{% url 'update_product3' product.id %}" style="color: white;">
+                        {{ product.total_quantity }}
+                      </a> 
+                    </td>
+                    <td>₹ {{ product.original_price | floatformat:0 }}</td>
+                    <td>₹ {{ product.product_selling_price | floatformat:0 }}</td>
+                    <td>{{product.product_offer}}%</td>
+                    <td >
+                      {% if product.category.module_offer %}
+                      {{product.category.module_offer}}%
+                      {% else %}
+                      No offer
+                      {% endif %}
+                    </td>
+                    <td>{{ product.updated_at|date:"d M H:i" }}</td>
+                    <td>
+                      <a onclick="showWarning(event, 'product_action', 'delete', '{{product.id}}')" class="tm-product-delete-link">
+                          <i class="far fa-trash-alt tm-product-delete-icon"></i>
+                      </a>
+                    </td>
+                </tr>
+                {% endfor %}
+
+                </tbody>
+            </table>
+          </div>
+          <!-- table container -->
+          <a
+          href="{% url 'add_product' %}"
+          class="btn btn-primary btn-block text-uppercase mb-3">Add new product</a>
+
+          <h5 class="mb-3 mt-4" style="font-weight: bold; color: rgb(48, 4, 4); margin: 10px;">Deleted Products</h5>
+
+          <div class="tm-product-table-container">
+            <table class="table table-hover tm-table-small tm-product-table">
+                <thead>
+                <tr>
+                    <th scope="col">&nbsp;</th>
+                    <th scope="col">PRODUCT NAME</th>
+                    <th scope="col">Original Price</th>
+                    <th scope="col">Offer Price</th>
+                    <th scope="col">Last updated</th>
+                    <th scope="col">&nbsp;</th>
+                </tr>
+                </thead>
+                <tbody>
+
+                {% for product in delete_products %}
+                <tr onclick="goToPage('update_product', '{{ product.id }}' )">
+                    <td scope="row">
+                      <div style="width: 50px; height: 50px; overflow: hidden;">
+                        <img height="50px" width="50px" src="{{  product.product_images.all.0.product_image.url }}" alt="product">
+                      </div>
+                    </td>
+                    <td class="tm-product-name">{{product.title}}</td>
+                    <td>₹{{ product.original_price | floatformat:0 }}</td>
+                    <td>₹{{ product.selling_price | floatformat:0 }}</td>
+                    <td>{{ product.updated_at|date:"d M H:i" }}</td>
+                    <td>
+                      <a onclick="showWarning(event, 'product_action', 'active', '{{product.id}}')" class="tm-product-delete-link">
+                        <i class="bi bi-arrow-counterclockwise"></i>
+                      </a>
+                    </td>
+                </tr>
+                {% endfor %}
+
+                </tbody>
+            </table>
+          </div>
+
+        </div>
+
+      </div>
+
+      <div class="col-sm-12 col-md-12 col-lg-4 col-xl-4 tm-block-col">
+        <div class="tm-bg-primary-dark tm-block tm-block-product-categories">
+            <h2 class="tm-block-title">Product Categories</h2>
+            
+            <div class="col m-2">
+              <form method="GET" class="d-flex ">
+                <input class="form-control me-2 bg-light text-dark" type="search" placeholder="Search Category" aria-label="Search" name="category_search"
+                {% if category_search and category_search is not None %} value="{{category_search}}" {% endif %}>
+                <button class="btn btn-info ml-2" type="submit">Search</button>
+              </form>
+            </div>
+  
+            <div class="tm-product-table-container">
+              <table class="table tm-table-small tm-product-table">
+                  <tbody>
+                    {% for category in categories %}
+                    <tr>
+                        <td class="tm-product-name">
+                          <a href="{% url 'update_category' category.id %}" style="color: white; ">{{category}}</a>
+                        </td>
+                        <td>
+                          {% if category.is_active %}
+                          <span style="color: green; background-color: white; padding: 3px;">Active</span>
+                          {% else %}
+                          <span style="color: red; background-color: white; padding: 3px;">Inactive</span>
+                          {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                  </tbody>
+              </table>
+            </div>
+            <!-- table container -->
+            <a href="{% url 'add_category' %}" class="btn btn-primary btn-block text-uppercase mb-3">
+            Add new category
+            </a>
+        </div>
+      </div>
+
+      <div class="col-sm-12 col-md-12 col-lg-8 col-xl-8 tm-block-col">
+        <div class="tm-bg-primary-dark tm-block tm-block-products" style="min-height: fit-content;">
+          <h5 class="mb-3" style="font-weight: bold; color: rgb(48, 4, 4); margin: 10px;">Incompleted Products</h5>
+
+          <div class="tm-product-table-container" >
+            <table class="table table-hover tm-table-small tm-product-table">
+                <thead>
+                <tr>
+                    <th scope="col">&nbsp;</th>
+                    <th scope="col">PRODUCT NAME</th>
+                    <th scope="col">Original Price</th>
+                    <th scope="col">Offer Price</th>
+                    <th scope="col">Last updated</th>
+                    <th scope="col">&nbsp;</th>
+                </tr>
+                </thead>
+                <tbody>
+
+                {% for product in incomplete_produts %}
+                <tr onclick="goToPage('redirect-add-product', '{{ product.id }}' )">
+                    <td scope="row">
+                      <div style="width: 50px; height: 50px; overflow: hidden;">
+                        {% if product.product_images.all %}
+                        <img height="50px" width="50px" src="{{  product.product_images.all.0.product_image.url }}" alt="product">
+                        {% else %}
+                        N/A
+                        {% endif %}
+                      </div>
+                    </td>
+                    <td class="tm-product-name">{{product.title}}</td>
+                    <td>₹{{ product.original_price | floatformat:0 }}</td>
+                    <td>₹{{ product.selling_price | floatformat:0 }}</td>
+                    <td>{{ product.updated_at|date:"d M H:i" }}</td>
+                    <td>
+                      
+                      <a onclick="showWarning(event, 'product_action', 'permenentDelete', '{{product.id}}')" class="tm-product-delete-link">
+                          <i class="far fa-trash-alt tm-product-delete-icon"></i>
+                      </a>
+                    </td>
+                </tr>
+                {% endfor %}
+
+                </tbody>
+            </table>
+          </div>
+
+        </div>
+
+      </div>
+  </div>
+</div>
+{% endblock content %}
+
+{% block scripts %}
+  <script src="js/jquery-3.3.1.min.js"></script>
+  <!-- https://jquery.com/download/ -->
+  <script src="js/bootstrap.min.js"></script>
+  <!-- https://getbootstrap.com/ -->
+  <script>
+    function goToPage(url, productId) {
+      window.location.href = `/product_management/${url}/${productId}/`;
+    }
+
+    function showWarning(event, url, action, productId) {
+      event.preventDefault(); // Prevent the default link click behavior
+      event.stopPropagation();
+      if (action == 'delete'){
+        if (confirm("Are you sure, you want to deactivate this product?")) {
+          window.location.href =  `/product_management/${url}/${action}/${productId}/` ; // Redirect to the delete URL if confirmed
+        }
+      }else if(action == 'active'){
+        if (confirm("Are you sure, you want to re activate this product?")) {
+          window.location.href =  `/product_management/${url}/${action}/${productId}/` ;
+        }
+      }else if(action=='permenentDelete'){
+        if (confirm("Are you sure, you want to permenantly delete this product?")) {
+          window.location.href =  `/product_management/${url}/${action}/${productId}/` ;
+        }
+      }
+      
+    }
+  </script>
+{% endblock scripts %}

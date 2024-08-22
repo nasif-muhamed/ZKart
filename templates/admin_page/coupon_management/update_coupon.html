@@ -1,0 +1,91 @@
+{% extends 'admin_page/layout/main.html' %}
+{% load static %}
+
+{% block header %}
+
+{% endblock header %}
+
+
+{% block content %}
+
+{% if messages %}
+<div class="alert-container">
+    {% for message in messages %}
+    <div class="alert alert-{{ message.tags }}" role="alert">
+        {{ message }}
+    </div>
+    {% endfor %}
+</div>
+{% endif %}
+
+<div class="container mt-5 bg-light p-5">
+    <h1 class="mb-4">Update Coupon</h1>
+    <form method="post" onsubmit="return validateDiscount()">
+        {% csrf_token %}
+        <div class="mb-3">
+            <label for="coupon_code" class="form-label">Coupon Code</label>
+            <input type="text" class="form-control" name="coupon_code" id="coupon_code" value="{{coupon.coupon_code}}" required>
+        </div>
+        <div class="mb-3">
+            <label for="description" class="form-label">Description</label>
+            <textarea class="form-control" name="description" id="description" rows="3" maxlength="100" required>{{coupon.description}}</textarea>
+        </div>
+        <div class="mb-3">
+            <label for="minimum_amount" class="form-label">Minimum Amount</label>
+            <input type="number" class="form-control" id="minimum_amount" name="minimum_amount" value="{{coupon.minimum_amount}}" min="1" required>
+        </div>
+        <div class="mb-3">
+            <label for="type" class="form-label">Discount Type</label>
+            <select class="form-select" name="type" id="type" required>
+                <option value="percentage" {% if coupon.type == 'percentage' %}selected{% endif %}>Percentage</option>
+                <option value="amount" {% if coupon.type == 'amount' %}selected{% endif %}>Amount</option>
+            </select>
+        </div>
+        <div class="mb-3 row">
+            <div class="col-md-6 ">
+                <label for="discount" class="form-label">Discount</label>
+                <input type="number" class="form-control" name="discount" id="discount" value="{{coupon.discount}}" min="1" required>    
+            </div>
+            <div class="col-md-6 d-flex justify-content-center align-items-center">
+                <input type="checkbox" id="is_expired" name="is_expired" {% if coupon.is_expired %} checked {% endif %}>
+                <label for="is_expired" class="form-label m-0 pl-2">Is Expired</label>    
+            </div>
+        </div>
+
+        <button type="submit" class="btn btn-primary">update Coupon</button>
+        <a href="{% url 'coupon_management' %}" class="btn btn-dark">Go Back</a>
+    </form>
+</div>
+{% endblock content %}
+
+
+{% block post_footer %}
+
+{% endblock post_footer %}
+  
+
+{% block scripts %}
+<script>
+function validateDiscount() {
+    const minAmount = parseFloat(document.getElementById('minimum_amount').value);
+    const discountType = document.getElementById('type').value;
+    const discountValue = parseFloat(document.getElementById('discount').value);
+
+    if (discountType === 'amount' && discountValue >= minAmount) {
+        alert('Minimum amount should be more than the discount amount.');
+        return false;
+    }
+
+    if (discountType === 'percentage' && discountValue > 99) {
+        alert('Discount percentage cannot be more than 99%.');
+        return false;
+    }
+
+    if (discountValue < 1 || minAmount < 0) {
+        alert('Enter a valid number.');
+        return false;
+    }
+    return true;
+}
+</script>
+{% endblock scripts %}

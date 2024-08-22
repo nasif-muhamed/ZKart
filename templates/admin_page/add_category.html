@@ -1,0 +1,81 @@
+{% extends 'admin_page/layout/main.html' %}
+{% load static %}
+
+{% block header %}
+
+{% endblock header %}
+
+{% block content %}
+<div class="container tm-mt-big tm-mb-big">
+  {% if messages %}
+  <div class="alert-container">
+      {% for message in messages %}
+      <div class="alert alert-{{ message.tags }}" role="alert">
+          {{ message }}
+      </div>
+      {% endfor %}
+  </div>
+  {% endif %}
+
+  <div class="row">
+    <div class="col-xl-9 col-lg-10 col-md-12 col-sm-12 mx-auto">
+      <div class="tm-bg-primary-dark tm-block tm-block-h-auto">
+        <div class="row">
+          <div class="col-12">
+            <h2 class="tm-block-title d-inline-block">Add New Category</h2>
+          </div>
+        </div>
+
+        <div class="row tm-edit-product-row">
+          <div class="col-12">
+
+            <form action="" method="post" class="tm-edit-product-form" enctype="multipart/form-data">
+              {% csrf_token %}
+              <div class="form-group mb-3">
+                <label for="title">Category Title
+                </label>
+                <input id="title" name="title" type="text" class="form-control validate" required />
+              </div>
+
+
+              </div>
+
+              <div class="col-xl-6 col-lg-6 col-md-12 mx-auto mb-4">
+                <div class="form-group mt-5 d-flex ml-5">
+                  <input id="active" name="active" type="checkbox" class="form-control validate" checked/>
+                  <label class="ml-4" for="active">Active</label>
+                </div>
+              </div>
+
+              <div class="col-xl-6 col-lg-6 col-md-12 mx-auto mb-4">
+                
+                <div class="form-group mt-5 ml-5">
+                  <input id="offer" name="offer" type="number" max="99" min="0" class="form-control validate"/>
+                  <label class="" for="offer">Category Offer(Optional)</label>
+                </div>
+              </div>
+
+              <div class="col-12">
+                <button type="submit" class="btn btn-primary btn-block text-uppercase">Add Category</button>
+              </div>
+            </form>
+          </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+{% endblock content %}
+
+{% block scripts %}
+<script src="js/jquery-3.3.1.min.js"></script>
+<!-- https://jquery.com/download/ -->
+<script src="jquery-ui-datepicker/jquery-ui.min.js"></script>
+<!-- https://jqueryui.com/download/ -->
+<script src="js/bootstrap.min.js"></script>
+<!-- https://getbootstrap.com/ -->
+
+<script>
+
+</script>
+{% endblock scripts %}
