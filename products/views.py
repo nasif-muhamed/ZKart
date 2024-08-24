@@ -46,7 +46,7 @@ def product_list(request, object):
     
     products_all = object.filter(is_active=True, category__is_active = True, stage = 'stage3').prefetch_related('product_images')
 
-    product_paginator = Paginator(products_all, 3)
+    product_paginator = Paginator(products_all, 9)
     products = product_paginator.get_page(page)
     
     start, end = 0, 0
