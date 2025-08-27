@@ -1,3 +1,4 @@
+import os
 from django.shortcuts import render, HttpResponse, redirect
 from . models import *
 from users . models import *
@@ -14,9 +15,15 @@ from django.utils import timezone
 from django.contrib.auth.decorators import login_required
 
 
+coords_str = os.getenv("SELLER_HUB_COORDINATES", "9.9312,76.2673")  # Kochi
+SELLER_HUB_COORDINATES = tuple(map(float, coords_str.split(",")))
+FREE_DELIVERY_LIMIT = int(os.getenv("FREE_DELIVERY_LIMIT_IN_KM") or 100)
+DELIVERY_CHARGE_INTERVAL = int(os.getenv("DELIVERY_CHARGE_INTERVAL") or 50)
+DELIVERY_PREMIUM_PER_INTERVAL = int(os.getenv("DELIVERY_PREMIUM_PER_INTERVAL") or 20)
+
+
 @login_required(login_url='/')
 def cart_view(request):
-    
     customer = request.user.account
     order, created = Order.objects.get_or_create(customer=customer, status='cart')
     orders = order.order_items.all()
@@ -191,7 +198,6 @@ from geopy.distance import geodesic
     
 def get_delivery_charge(address_id):
     try:
-        SELLER_HUB_COORDINATES = (9.9312, 76.2673)  # Kochi
         address = Address.objects.get(id=address_id)
         address_latitude = address.latitude
         address_longitude = address.longitude
@@ -212,14 +218,12 @@ def get_delivery_charge(address_id):
             
         distance_km = geodesic(SELLER_HUB_COORDINATES, user_coordinates).km
 
-        if distance_km <= 100:
-            delivery_charge = 'Free' 
+        if distance_km <= FREE_DELIVERY_LIMIT:
+            return "Free"
         
-        else:
-            distance_km -= 100
-            delivery_charge = math.ceil(distance_km/50) * 20
-
-        return delivery_charge
+        extra_distance = distance_km - FREE_DELIVERY_LIMIT
+        intervals = math.ceil(extra_distance / DELIVERY_CHARGE_INTERVAL)
+        return intervals * DELIVERY_PREMIUM_PER_INTERVAL
     
     except:
         return 'None'
