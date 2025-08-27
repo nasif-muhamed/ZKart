@@ -1,3 +1,4 @@
+import os
 from django.shortcuts import render, redirect, HttpResponse
 from . models import *
 from django.contrib.auth.models import User
@@ -207,7 +208,6 @@ def change_password(request):
     return redirect(forgot_password)
         
 
-from django.contrib.sites.shortcuts import get_current_site
 from django.template.loader import render_to_string
 from django.utils.http import urlsafe_base64_decode, urlsafe_base64_encode
 from django.utils.encoding import force_bytes, force_str
@@ -283,10 +283,10 @@ def register_page(request):
 
             customer.save()
 
-            current_site = get_current_site(request)
+            current_site = os.getenv('CURRENT_DOMAIN')
             mail_subject = 'Activate your account'
             mail_message = render_to_string('emailer/account_activation_email.html', {'user': user,
-                                                                                     'domain' : current_site.domain,
+                                                                                     'domain' : current_site,
                                                                                      'uid' : urlsafe_base64_encode(force_bytes(user.pk)),
                                                                                      'token' : account_activation_token.make_token(user)})
             
@@ -330,8 +330,8 @@ def is_password_valid(password):
         return False
     
     has_lower, has_upper, has_digit, has_symbol = False, False, False, False
-    symbols = '~`!@#$%^&*()_-+={[}]|\:;"' "'<,>.?/"
-    
+    symbols = r'~`!@#$%^&*()_-+={[}]|\:;"\'<,>.?/'
+
     # checking presence of lowercase, uppercase, digit and symbol.
     for character in password:
         if character.islower():
