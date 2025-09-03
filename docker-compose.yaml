@@ -1,0 +1,42 @@
+services:
+  db:
+    image: postgres:latest
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    environment:
+      POSTGRES_USER : postgres
+      POSTGRES_PASSWORD : Nasif@sql
+      POSTGRES_DB : zkart_db
+    ports:
+      - "5432:5432"
+
+  web:
+    build: .
+    volumes:
+      - .:/app
+    image: zkart:latest
+    ports:
+      - "8000:8000"
+    environment:
+      - MAIL=${MAIL}
+      - PASSWORD=${PASSWORD}
+      - SECRET_KEY=${SECRET_KEY}
+      - DEBUG=${DEBUG}
+      - ALLOWED_HOSTS=${ALLOWED_HOSTS}
+      - RAZORPAY_API_KEY=${RAZORPAY_API_KEY}
+      - RAZORPAY_API_SECRET_KEY=${RAZORPAY_API_SECRET_KEY}
+      - SELLER_HUB_COORDINATES=${SELLER_HUB_COORDINATES}
+      - FREE_DELIVARY_LIMIT_IN_KM=${FREE_DELIVARY_LIMIT_IN_KM}
+      - DELIVARY_CHARGE_INTERVAL=${DELIVARY_CHARGE_INTERVAL}
+      - DELIVARY_PREMIUM_PER_INTERVAL=${DELIVARY_PREMIUM_PER_INTERVAL}
+      - CURRENT_DOMAIN=${CURRENT_DOMAIN}
+      - DATABASE_URL=${DATABASE_URL}
+    command: >
+        sh -c "python manage.py makemigrations &&
+                python manage.py migrate &&
+                python manage.py runserver 0.0.0.0:8000"
+    # depends_on:
+    #   - db
+
+volumes:
+  postgres_data:

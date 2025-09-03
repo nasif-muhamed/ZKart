@@ -1,0 +1,34 @@
+# Environment variables
+zkart/.env
+*.env
+
+# Python bytecode
+*.pyc
+__pycache__/
+
+# SQLite DB
+db.sqlite3
+
+# Virtual environment
+venv/
+/venv
+
+# Uploaded media files
+/media
+
+# Git
+.git
+.gitignore
+
+# Logs
+*.log
+
+# IDE/editor config
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# System files
+.DS_Store
+Thumbs.db
