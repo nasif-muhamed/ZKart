@@ -226,7 +226,11 @@ RAZORPAY_API_SECRET_KEY = os.environ.get('RAZORPAY_API_SECRET_KEY')
 
 SECURE_CROSS_ORIGIN_OPENER_POLICY = "same-origin-allow-popups"
 
-if not DEBUG: 
+
+# CSRF setup
+CSRF_TRUSTED_ORIGINS = os.getenv("CSRF_TRUSTED_ORIGINS", "http://localhost:8000,http://127.0.0.1:8000").split(",")
+
+if os.getenv('STORAGE', 'media') == 's3': 
     INSTALLED_APPS += ["storages"]
 
     AWS_ACCESS_KEY_ID = os.environ.get('AWS_ACCESS_KEY_ID')
