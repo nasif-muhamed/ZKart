@@ -1,6 +1,6 @@
 import os
 import json
-from django.shortcuts import render, HttpResponse, redirect
+from django.shortcuts import render, redirect
 from django.db.models import F, ExpressionWrapper, DateTimeField
 from django.db.models.functions import Lower
 from django.http import JsonResponse
@@ -10,7 +10,7 @@ from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 from django.db import transaction
 from . models import *
-from . utils import order_address_creator, get_delivery_charge, generate_unique_order_id
+from . utils import order_address_creator, get_delivery_charge, generate_unique_order_id, render_to_excel, render_to_pdf
 from users . models import *
 from users . views import *
 from products . models import *
@@ -796,85 +796,6 @@ def update_coupon(request, coupon_id):
         'coupon' : coupon,
     }
     return render(request, 'admin_page/coupon_management/update_coupon.html', context)
-
-
-import openpyxl
-from openpyxl.styles import Font
-from django.http import HttpResponse
-
-def render_to_excel(order_items, context):
-    wb = openpyxl.Workbook()
-    ws = wb.active
-    ws.title = "ZKart Sales Report"
-
-    cell = ws.cell(row=1, column=1, value="ZKart Sales Report")
-    cell.font = Font(bold=True)
-    ws.cell(row=2, column=1, value="Overall Order Items")
-    ws.cell(row=2, column=2, value=context['overall_order_items'])
-
-    ws.cell(row=3, column=1, value="Overall Order Amount")
-    ws.cell(row=3, column=2, value=context['overall_order_amount'])
-
-    ws.cell(row=4, column=1, value="Overall Order Discount")
-    ws.cell(row=4, column=2, value=context['overall_order_discount'])
-
-    headers = [
-        "Order Id", "Username", "Order Item Id", "Order Date",
-        "Product Title", "Product Original Price", "Sold Price",
-        "Product Quantity", "Product Discount", "Coupon Applied",
-        "Coupon Discount", "Total Amount", "Order Item Status",
-        "Payment Status", "Payment Method"
-    ]
-    # Create header row
-    for col_num, header in enumerate(headers, 1):
-        cell = ws.cell(row=6, column=col_num, value=header)
-        cell.font = Font(bold=True)
-
-    # Add data rows
-    for row_num, order_item in enumerate(order_items, 7):
-        ws.cell(row=row_num, column=1, value=order_item.order.order_identifier)
-        ws.cell(row=row_num, column=2, value=order_item.order.customer.user.username)
-        ws.cell(row=row_num, column=3, value=order_item.id)
-        if order_item.order.order_date:
-            order_date_naive = order_item.order.order_date.replace(tzinfo=None)
-            order_date_str = order_date_naive.strftime("%Y-%m-%d")
-        else:
-            order_date_str = 'N/A'
-        ws.cell(row=row_num, column=4, value=order_date_str)
-        ws.cell(row=row_num, column=5, value=order_item.product_variant.product.title)
-        ws.cell(row=row_num, column=6, value=order_item.original_price)
-        ws.cell(row=row_num, column=7, value=order_item.selling_price)
-        ws.cell(row=row_num, column=8, value=order_item.quantity)
-        ws.cell(row=row_num, column=9, value=order_item.item_discount())
-        ws.cell(row=row_num, column=10, value=order_item.order.coupon.coupon_code if order_item.order.coupon else 'N/A')
-        ws.cell(row=row_num, column=11, value=order_item.coupon_discount)
-        ws.cell(row=row_num, column=12, value=order_item.item_grand_total())
-        ws.cell(row=row_num, column=13, value=order_item.status)
-        ws.cell(row=row_num, column=14, value=order_item.payment_status)
-        ws.cell(row=row_num, column=15, value=order_item.order.payment_method)
-
-
-    # Save the workbook to a BytesIO object
-    response = HttpResponse(content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
-    response['Content-Disposition'] = 'attachment; filename=zkart_sales_report.xlsx'
-    wb.save(response)
-    return response
-
-
-from django.http import HttpResponse
-from django.template.loader import get_template
-from xhtml2pdf import pisa
-from io import BytesIO
-
-def render_to_pdf(template_src, context_dict): 
-    template = get_template(template_src)
-    html = template.render(context_dict)
-    result = BytesIO()
-    pdf = pisa.pisaDocument(BytesIO(html.encode("UTF-8")), result)
-    if not pdf.err:
-        response = HttpResponse(result.getvalue(), content_type='application/pdf')
-        return response
-    return None
 
 
 @login_required(login_url='admin_login')
