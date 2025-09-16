@@ -1,25 +1,27 @@
 import os
+import json
 from django.shortcuts import render, HttpResponse, redirect
+from django.db.models import F, ExpressionWrapper, DateTimeField
+from django.db.models.functions import Lower
+from django.http import JsonResponse
+from django.utils import timezone
+from django.contrib.auth.decorators import login_required
+from django.http import JsonResponse
+from django.views.decorators.csrf import csrf_exempt
+from django.db import transaction
 from . models import *
+from . utils import order_address_creator, get_delivery_charge, generate_unique_order_id
 from users . models import *
 from users . views import *
 from products . models import *
 from products . views import *
-from django.db.models import F, ExpressionWrapper, DateTimeField
-from django.db.models.functions import Lower
-# from django.core.paginator import Paginator
-# from django.db.models import Q
-from django.http import JsonResponse
-import json
-from django.utils import timezone
-from django.contrib.auth.decorators import login_required
-
 
 coords_str = os.getenv("SELLER_HUB_COORDINATES", "9.9312,76.2673")  # Kochi
 SELLER_HUB_COORDINATES = tuple(map(float, coords_str.split(",")))
 FREE_DELIVERY_LIMIT = int(os.getenv("FREE_DELIVERY_LIMIT_IN_KM") or 100)
 DELIVERY_CHARGE_INTERVAL = int(os.getenv("DELIVERY_CHARGE_INTERVAL") or 50)
 DELIVERY_PREMIUM_PER_INTERVAL = int(os.getenv("DELIVERY_PREMIUM_PER_INTERVAL") or 20)
+COD_LIMIT_IN_INR=int(os.getenv("COD_LIMIT_IN_INR") or 1000)
 
 
 @login_required(login_url='/')
@@ -29,7 +31,6 @@ def cart_view(request):
     orders = order.order_items.all()
     sub_total = order.get_cart_total()
     total_discount = order.get_cart_discount()
-    delivery_charge = 150 if sub_total < 2000 else 0
     coupon_discount = request.session['coupon_discount'] if 'coupon_discount' in request.session else 0
     coupon_applicable = Coupon.objects.filter(is_expired = False)
 
@@ -67,16 +68,13 @@ def cart_view(request):
 
             messages.info(request, 'Coupon removed successfully.')
 
-        
         return redirect(cart_view)
 
     total_amount = sub_total - coupon_discount
-    
     context = {
         'orders' : orders,
         'sub_total' : sub_total,
         'total_discount' : total_discount,
-        'delivery_charge' : delivery_charge,
         'total_amount' : total_amount,
         'coupon_applicable' : coupon_applicable,
     }
@@ -175,80 +173,12 @@ def delete_cart_item(request):
     item.delete()
     return JsonResponse({'success': True, })     
 
-import random
-import string
-
-def generate_unique_order_id(customer_id):
-    current_time = datetime.now().strftime('%m%d%H%M%S') 
-    customer_id = str(customer_id)
-    random_chars = ''.join(random.choices(string.ascii_uppercase + string.digits, k=2))
-    order_id = f"{current_time}{customer_id}{random_chars}"
-    order_id = order_id
-    
-    while Order.objects.filter(order_identifier=order_id).exists():
-        random_chars = ''.join(random.choices(string.ascii_uppercase + string.digits, k=2))
-        order_id = f"{current_time}{customer_id}{random_chars}"
-        order_id = order_id
-
-    return order_id
-
-from django.http import JsonResponse
-from geopy.geocoders import Nominatim
-from geopy.distance import geodesic
-    
-def get_delivery_charge(address_id):
-    try:
-        address = Address.objects.get(id=address_id)
-        address_latitude = address.latitude
-        address_longitude = address.longitude
-        geolocator = Nominatim(user_agent="zkart")
-
-        if address_latitude is not None and address_longitude is not None:
-            user_coordinates = (address_latitude, address_longitude)
-
-        else:
-            location = geolocator.geocode(f'{address.city}, {address.pin_code}')
-
-            if location:
-                user_coordinates = (location.latitude, location.longitude)
-            
-            else:
-                delivery_charge = 'None'
-                return delivery_charge
-            
-        distance_km = geodesic(SELLER_HUB_COORDINATES, user_coordinates).km
-
-        if distance_km <= FREE_DELIVERY_LIMIT:
-            return "Free"
-        
-        extra_distance = distance_km - FREE_DELIVERY_LIMIT
-        intervals = math.ceil(extra_distance / DELIVERY_CHARGE_INTERVAL)
-        return intervals * DELIVERY_PREMIUM_PER_INTERVAL
-    
-    except:
-        return 'None'
 
 def get_delivery_charge_for_checkout(request):
     if request.method == 'POST':
         address_id = request.POST.get('address_id')
         delivery_charge = get_delivery_charge(address_id)
         return JsonResponse({'delivery_charge': delivery_charge})
-
-
-def order_address_creator(og_address):
-    order_address = OrderAddress()
-    order_address.name = og_address.name
-    order_address.mobile = og_address.mobile
-    order_address.address_line1 = og_address.address_line1
-    order_address.address_line2 = og_address.address_line2
-    order_address.city = og_address.city
-    order_address.state = og_address.state
-    order_address.pin_code = og_address.pin_code
-    order_address.latitude = og_address.latitude
-    order_address.longitude = og_address.longitude
-    order_address.country = og_address.country
-    order_address.save()
-    return order_address
 
 
 @login_required(login_url='/')
@@ -258,14 +188,22 @@ def checkout_page(request):
  
     request.session['checkout_access'] = False
 
-    customer = request.user.account
-    if not customer.is_completed():
-        messages.error(request, 'Complete your profile prior to Checkout')
-        return redirect(cart_view)
+    try:
+        customer = request.user.account
+        if not customer.is_completed():
+            messages.error(request, 'Complete your profile prior to Checkout')
+            return redirect(cart_view)
 
-    addresses = customer.user_addresses.all()
-    order, created = Order.objects.get_or_create(customer=customer, status='cart')
-    orders = order.order_items.all()
+        addresses = customer.user_addresses.all()
+        # if not addresses.count():
+        #     messages.error(request, 'Add at least 1 Address')
+        #     return redirect(cart_view)
+    
+        order, created = Order.objects.get_or_create(customer=customer, status='cart')
+        orders = order.order_items.all()
+    except Exception as e:
+        messages.error(request, 'Something went wrong')
+        return redirect(checkout_page)
 
     if orders:
         for order_item in orders:
@@ -273,9 +211,10 @@ def checkout_page(request):
                 messages.error(request, f'{order_item.product_variant.product.title} is out of stock. Please remove it from the cart or adjust the stock')
                 return redirect(cart_view)
         sub_total = order.get_cart_total()
-        delivery_charge = 150 if sub_total < 2000 else 0
         coupon_discount = request.session['coupon_discount'] if 'coupon_discount' in request.session else 0
         total_amount = sub_total - coupon_discount
+        # default_address = addresses.get(default=True)
+        delivery_charge = 'None'
 
         if request.method == 'POST':
             selected_address_id = request.POST.get('selectedAddress')
@@ -286,10 +225,9 @@ def checkout_page(request):
 
             if "cod_button" in request.POST:
                 selected_payment_method = 'cod'
-                if total_amount > 1000:
+                if total_amount > COD_LIMIT_IN_INR:
                     messages.error(request, 'Order above Rs 1000 is not eligible for COD')
                     return redirect(cart_view)
-
 
             elif "wallet_button" in request.POST:
                 selected_payment_method = 'wallet'
@@ -299,86 +237,87 @@ def checkout_page(request):
                     return redirect(cart_view)
 
             try:
-                if selected_address_id and selected_payment_method:
-                    og_address = Address.objects.get(id=int(selected_address_id))
-                    delivery_charge = get_delivery_charge(og_address.id)
-                    if delivery_charge == 'Free':
-                        delivery_charge = 0
-                    elif delivery_charge == 'None':
-                        messages.error(request, 'Invalid Address')
-                        return redirect(cart_view)
-                    
-                    order_address = order_address_creator(og_address)
-                    order.address = order_address
-                    order.payment_method = selected_payment_method
-                    order.payment_id = payment_id
-                    if special_instructions:
-                        order.special_instructions = special_instructions
-
-                    if selected_payment_method == 'razorpay' and payment_failed == 'true':
-                        order.status = 'pending'
-                    else:
-                        order.status = 'placed'
-                        order.order_date = timezone.now()
-
-                    order.delivery_charge = delivery_charge
-
-                    if selected_payment_method == 'cod' or selected_payment_method == 'wallet':
-                        order.order_identifier = generate_unique_order_id(customer.id)
+                with transaction.atomic():
+                    if selected_address_id and selected_payment_method:
+                        og_address = Address.objects.get(id=int(selected_address_id))
+                        delivery_charge = get_delivery_charge(og_address.id)
+                        if delivery_charge == 'Free':
+                            delivery_charge = 0
+                        elif delivery_charge == 'None':
+                            messages.error(request, 'Invalid Address')
+                            return redirect(cart_view)
                         
-                    order.save()
+                        order_address = order_address_creator(og_address)
+                        order.address = order_address
+                        order.payment_method = selected_payment_method
+                        order.payment_id = payment_id
+                        if special_instructions:
+                            order.special_instructions = special_instructions
 
-                    for order_item in orders:
                         if selected_payment_method == 'razorpay' and payment_failed == 'true':
-                            order_item.status = 'pending'
-                            order_item.payment_status = 'failed'
-
+                            order.status = 'pending'
                         else:
-                            order_item.status = 'in_progress'
-                            order_item.order_date = timezone.now()                    
-                            order_item.product_variant.quantity -= order_item.quantity
-                            if selected_payment_method == 'razorpay' or selected_payment_method == 'wallet':
-                                order_item.payment_status = 'success'
+                            order.status = 'placed'
+                            order.order_date = timezone.now()
+
+                        order.delivery_charge = delivery_charge
+
+                        if selected_payment_method == 'cod' or selected_payment_method == 'wallet':
+                            order.order_identifier = generate_unique_order_id(customer.id)
                             
-                        order_item.selling_price = order_item.product_variant.product.product_selling_price()
-                        order_item.original_price = order_item.product_variant.product.original_price
-
-                        order_item.save()
-                        order_item.product_variant.save()
-                        order_item.product_variant.product.save()
-
-                    if 'coupon_discount' in request.session:
-                        order.coupon = Coupon.objects.get(coupon_code= request.session['applied_coupon'])
-                        order_total_basic = order.order_total_basic()
-                        coupon_discounts = int(request.session['coupon_discount'])
-                        for order_item in orders:
-                            order_item.coupon_discount = round((order_item.selling_price * order_item.quantity / order_total_basic) * coupon_discounts)
-                            order_item.save()
-
                         order.save()
-                        del request.session['applied_coupon']
-                        del request.session['coupon_discount']
 
-                    if selected_payment_method == 'razorpay':
-                        response_data = {
-                            'status': 'success',
-                            'message': f'Your Order ID: {order.id}',
-                            'order_id': order.id,
-                        }
-                        return JsonResponse(response_data)
+                        for order_item in orders:
+                            if selected_payment_method == 'razorpay' and payment_failed == 'true':
+                                order_item.status = 'pending'
+                                order_item.payment_status = 'failed'
 
-                    if selected_payment_method == 'wallet':
-                        customer_wallet.balance -= total_amount
-                        customer_wallet.save()
+                            else:
+                                order_item.status = 'in_progress'
+                                order_item.order_date = timezone.now()                    
+                                order_item.product_variant.quantity -= order_item.quantity
+                                if selected_payment_method == 'razorpay' or selected_payment_method == 'wallet':
+                                    order_item.payment_status = 'success'
+                                
+                            order_item.selling_price = order_item.product_variant.product.product_selling_price()
+                            order_item.original_price = order_item.product_variant.product.original_price
 
-                    return redirect(order_success, order.id)
+                            order_item.save()
+                            order_item.product_variant.save()
+                            order_item.product_variant.product.save()
 
-                else:
-                    messages.error(request, 'Something went wrong')
-                    return redirect(checkout_page)
+                        if 'coupon_discount' in request.session:
+                            order.coupon = Coupon.objects.get(coupon_code= request.session['applied_coupon'])
+                            order_total_basic = order.order_total_basic()
+                            coupon_discounts = int(request.session['coupon_discount'])
+                            for order_item in orders:
+                                order_item.coupon_discount = round((order_item.selling_price * order_item.quantity / order_total_basic) * coupon_discounts)
+                                order_item.save()
 
-            except:
-                messages.error(request, 'Something went wrong')
+                            order.save()
+                            del request.session['applied_coupon']
+                            del request.session['coupon_discount']
+
+                        if selected_payment_method == 'razorpay':
+                            response_data = {
+                                'status': 'success',
+                                'message': f'Your Order ID: {order.id}',
+                                'order_id': order.id,
+                            }
+                            return JsonResponse(response_data)
+
+                        if selected_payment_method == 'wallet':
+                            customer_wallet.balance -= total_amount
+                            customer_wallet.save()
+
+                        return redirect(order_success, order.id)
+
+                    else:
+                        messages.error(request, 'Select an Address or Payment method')
+                        return redirect(checkout_page)
+
+            except Exception as e:
+                messages.error(request, 'Something went wrong while ordering. Contact customer care if amount debited')
                 return redirect(checkout_page)
 
 
@@ -1078,7 +1017,6 @@ def sales_report(request):
 # test
 from geopy.geocoders import Nominatim
 from geopy import distance
-from django.views.decorators.csrf import csrf_exempt
 from decimal import Decimal
 
 def test_purpose(request):

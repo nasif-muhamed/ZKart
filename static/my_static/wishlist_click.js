@@ -11,7 +11,7 @@ $(document).ready(function() {
         }else{
             $.ajax({
                 method: 'POST',
-                url: toggle_wishlist_url,  // Make sure to create this URL in your Django URLs
+                url: toggle_wishlist_url,
                 data: {
                     'product_id': productId,
                     'csrfmiddlewaretoken': csrf_token

@@ -6,7 +6,6 @@ import string
 
 
 class Account(models.Model):
-
     MALE = 'Male'
     FEMALE = 'Female'
     GENDER_CHOICES = [

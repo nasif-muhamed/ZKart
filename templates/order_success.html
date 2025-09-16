@@ -55,7 +55,7 @@
 <div class="container mt-5">
     <div class="d-flex text-right justify-content-between" >
       <h4 >Order ID: <strong style="color: rgb(160, 143, 45);"> #{{order.order_identifier}}</strong></h4>
-      <button type="submit" class="btn btn-success btn-lg">Download Invoice</button>
+      {% comment %} <button type="submit" class="btn btn-success btn-lg">Download Invoice</button> {% endcomment %}
     </div>
     <div class="text-center">
       {% if order.status == 'placed' %}
