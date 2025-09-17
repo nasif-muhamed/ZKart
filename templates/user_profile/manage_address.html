@@ -67,7 +67,6 @@
       
       {% if default_address %}
       <div class="address-card default">
-
         <div style="background-color: #007bff; display: inline-block; padding: 5px; margin-bottom: 1rem;
                     color: #ffffff; font-weight: 700; font-size: x-small; border-radius: 5px !important;">
           Default
@@ -216,6 +215,10 @@
 
 {% block scripts_profile %}
 <script>
+  const getAddressDetailsUrl = "{% url 'get_address_details' 0 %}";
+  const editAddressUrl = "{% url 'edit_address' 0 %}";
+  const deleteAddressUrl = "{% url 'delete_address' 0 %}";
+
   addAddressBtn = document.getElementById('add-address-btn')
 
   // Hide Add Address button
@@ -232,15 +235,13 @@
 
   // Show Edit Address Form
   document.querySelectorAll('.edit-address-btn').forEach(button => {
-
       button.addEventListener('click', function() {
           const addressId = this.dataset.id;
-          // Populate edit form with existing address data
-          fetch(`/user_profile/get-address-details/${addressId}/`)
+          fetch(getAddressDetailsUrl.replace("0", addressId))
           .then(response => response.json())
           .then(address_data => {
               const editForm = document.getElementById('editForm');
-              editForm.action = '/user_profile/edit-address/' + addressId + '/';
+              editForm.action = editAddressUrl.replace("0", addressId);
               document.getElementById('edit_name').value = address_data.name;
               document.getElementById('edit_mobile').value = address_data.mobile;
               document.getElementById('edit_address_line1').value = address_data.address_line1;
@@ -287,7 +288,7 @@
           const addressId = this.dataset.id;
           if (confirm("Are you sure you want to delete this Address?")){
             // Implement AJAX request to delete address from the server
-            fetch(`/user_profile/delete-address/${addressId}/`, {
+            fetch(deleteAddressUrl.replace("0", addressId), {
                 method: 'DELETE',
                 headers: {
                     'X-CSRFToken': '{{ csrf_token }}',

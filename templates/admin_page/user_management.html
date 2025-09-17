@@ -51,7 +51,10 @@
                     <td>{{user.account_orders.all|length}}</td>
                     <td>{{ user.created_at|date:"d/m/Y" }}</td>
                     <td>
-                    <a onclick="showWarning(event, 'user_action', 'delete', '{{user.id}}')" class="tm-product-delete-link" style="display: flex; align-items: center; justify-content: center;">
+                    <a onclick="showWarning(event, 'delete')"
+                      href="{% url 'user_action' user.id 'delete' %}"
+                      class="tm-product-delete-link" style="display: flex; align-items: center; justify-content: center;"
+                    >
                       <i class="bi bi-person-fill-slash" style="font-size: 20px;"></i>
                     </a>
                     </td>
@@ -95,7 +98,10 @@
                     <td>{{user.account_orders.all|length}}</td>
                     <td>{{ user.created_at|date:"d/m/Y" }}</td>
                     <td>
-                    <a onclick="showWarning(event, 'user_action', 'active', '{{user.id}}')" class="tm-product-delete-link" style="display: flex; align-items: center; justify-content: center;">
+                    <a onclick="showWarning(event, 'active')"
+                      href="{% url 'user_action' user.id 'active' %}"                      
+                      class="tm-product-delete-link" style="display: flex; align-items: center; justify-content: center;"
+                    >
                       <i class="bi bi-person-check" style="font-size: 20px;"></i>
                     </a>
                     </td>
@@ -118,26 +124,20 @@
   <!-- https://jquery.com/download/ -->
   <script src="js/bootstrap.min.js"></script>
   <!-- https://getbootstrap.com/ -->
-  <script>
-    /*
-    function goToPage(url, productId) {
-      window.location.href = `/product_management/${url}/${productId}/`;
-    }
-    */
-        
-    function showWarning(event, url, action, userId) {
-      event.preventDefault(); // Prevent the default link click behavior
-      event.stopPropagation();
+  <script>        
+    function showWarning(event, action) {
+      {% comment %} const userActionUrl = "{% url 'user_action' 'USER_ID' 'ACTION' %}" {% endcomment %}
+      let message = "";
       if (action == 'delete'){
-        if (confirm("Are you sure you want to bloack this user?")) {
-          window.location.href =  `/user_management/${url}/${action}/${userId}/` ; // Redirect to the delete URL if confirmed
-        }
+        message = "Are you sure you want to bloack this user?"
       }else if(action == 'active'){
-        if (confirm("Are you sure you want to unbloack this user?")) {
-          window.location.href =  `/user_management/${url}/${action}/${userId}/` ; // Redirect to the delete URL if confirmed
-        }
+        message = "Are you sure you want to unbloack this user?"
       }
-      
+      if (message && !confirm(message)) {
+        event.preventDefault();
+        return false;
+      }
+      return true;
     }
     
   </script>

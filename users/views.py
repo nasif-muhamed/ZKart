@@ -65,8 +65,8 @@ def forgot_password(request):
     if request.method=='POST':
         email = request.POST.get('email')
 
-        if not Account.objects.filter(user__email = email).exists():
-            messages.error(request, 'No account registered with this account.')
+        if not User.objects.filter(email=email, is_active=True).exists():
+            messages.error(request, 'No active account found with this email.')
             return redirect(forgot_password)
         
         redirect_to = send_otp(request, email)
@@ -103,8 +103,7 @@ def send_otp(request, email):
         return redirect(forgot_password)
 
 
-def submit_otp(request, system_otp=''):
-
+def submit_otp(request):
     if request.session.get('otp_email') and request.session.get('valid_until') is not None:
 
         if request.method == 'POST':
@@ -151,7 +150,6 @@ def submit_otp(request, system_otp=''):
     return redirect(forgot_password)
 
 def resend_otp(request):
-
     if request.session.get('otp_email') and request.session.get('valid_until') is not None:
         email = request.session['otp_email']
         redirect_to = send_otp(request, email)
@@ -160,7 +158,6 @@ def resend_otp(request):
     return redirect(forgot_password)
 
 def change_password(request):
-    
     if request.session.get('otp_email') and request.session.get('pass_valid_until') is not None:
         context = {
             'is_password_valid': False
@@ -705,7 +702,7 @@ def admin_login(request):
 from . charts import *
 
 from django.db.models.functions import TruncDate, TruncMonth, TruncYear
-@login_required(login_url='admin_login')
+@login_required(login_url='admin-login')
 @user_passes_test(is_admin, login_url='/permission-denied/')
 def admin_dashboard(request):
     chart_filter = request.GET.get('filter', 'daily')
@@ -838,7 +835,7 @@ def admin_dashboard(request):
     return render(request, 'admin_page/dashboard.html', context)
 
 
-@login_required(login_url='admin_login')
+@login_required(login_url='admin-login')
 @user_passes_test(is_admin, login_url='/permission-denied/')
 def user_management(request):
 
@@ -862,10 +859,10 @@ def user_management(request):
     return render(request, 'admin_page/user_management.html', context)
 
 
-@login_required(login_url='admin_login')
+@login_required(login_url='admin-login')
 @user_passes_test(is_admin, login_url='/permission-denied/')
-def user_action(request, action, id):
-    costomer = Account.objects.get(id = id)
+def user_action(request, user_id, action):
+    costomer = Account.objects.get(id = user_id)
     user = costomer.user
     if action == 'delete':
         user.is_active = False
