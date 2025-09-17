@@ -15,6 +15,7 @@ from django.db.models import Q, Count, Case, When
 from django.core.exceptions import ValidationError
 from django.http import JsonResponse
 from django.db.models.functions import Coalesce
+from . validators import validate_register_data, is_password_valid
 
 
 def user_redirect(request):
@@ -216,6 +217,7 @@ def otp_page(request):
     }
     return render(request, 'signin.html', context)
 
+
 def register_page(request):
     context = {'request': request.method}
 
@@ -230,32 +232,8 @@ def register_page(request):
         pass2= request.POST.get('repassword')
         referral= request.POST.get('referral')
 
-        if not all([username, email, pass1, pass2]):
-            messages.error(request, 'All fields are required.')
-
-        elif not is_password_valid(pass1):
-            context['pass_error'] = True
-            return render(request, 'signup.html', context)
-        
-        elif len(username) < 6:
-            messages.error(request, '*username must contain atleast 6 charecters')
-
-        elif ' ' in username:
-            messages.error(request, '*username should not contain space')
-
-        elif pass1 != pass2:
-            messages.error(request, '*password and confirm password is not matching')
-        
-        elif Account.objects.filter(user__username = username).exists():
-            messages.error(request, 'Username already taken.')
-
-        elif Account.objects.filter(user__email = email).exists():
-            messages.error(request, 'Email already registered.')
-
-        elif referral and not Account.objects.filter(referral_code = referral).exists():
-            messages.error(request, 'Referral Code not exist.')
-
-        else:
+        validated, error = validate_register_data(username, email, pass1, pass2, referral)
+        if validated:
             user = User.objects.create_user(
                 username=username,
                 email=email,
@@ -288,8 +266,13 @@ def register_page(request):
             messages.success(request, "Please check your email to complete the registration.")
 
             return redirect(login_page)
-
+        else:
+            if error == 'pass_error':
+                context['pass_error'] = True
+            else:
+                messages.error(request, error)
     return render(request, 'signup.html', context)
+
 
 def activate(request, uidb64, token):
     User = get_user_model()
@@ -311,32 +294,6 @@ def activate(request, uidb64, token):
     else: 
         messages.error(request, "Activation link is invalid or expired.")
         return redirect(login_page)
-
-
-# to validate password.
-def is_password_valid(password):
-    # checking min length and white spice not containing requirment
-    if len(password) < 8 or ' ' in password:
-        return False
-    
-    has_lower, has_upper, has_digit, has_symbol = False, False, False, False
-    symbols = r'~`!@#$%^&*()_-+={[}]|\:;"\'<,>.?/'
-
-    # checking presence of lowercase, uppercase, digit and symbol.
-    for character in password:
-        if character.islower():
-            has_lower = True
-        
-        if character.isupper():
-            has_upper = True
-        
-        if character.isdigit():
-            has_digit = True
-        
-        if character in symbols:
-            has_symbol = True
-        
-    return has_lower and has_upper and has_digit and has_symbol
 
 
 def user_home(request):
