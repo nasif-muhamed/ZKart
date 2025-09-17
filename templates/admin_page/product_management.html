@@ -64,7 +64,7 @@
                 <tbody>
 
                 {% for product in active_products %}
-                <tr onclick="goToPage('update_product', '{{ product.id }}' )">
+                <tr onclick="window.location.href='{% url 'update_product' product.id %}'">
                     <td scope="row">
                       <div style="width: 50px; height: 50px; overflow: hidden;">
                         <img height="50px" width="50px" src="{{ product.product_images.all.0.product_image.url }}" alt="product">
@@ -72,7 +72,7 @@
                     </td>
                     <td class="tm-product-name">{{product.title}}</td>
                     <td>
-                      <a href="{% url 'update_product3' product.id %}" style="color: white;">
+                      <a href="{% url 'update_product_step3' product.id %}" style="color: white;">
                         {{ product.total_quantity }}
                       </a> 
                     </td>
@@ -88,7 +88,10 @@
                     </td>
                     <td>{{ product.updated_at|date:"d M H:i" }}</td>
                     <td>
-                      <a onclick="showWarning(event, 'product_action', 'delete', '{{product.id}}')" class="tm-product-delete-link">
+                      <a href="{% url 'product_action' product.id 'delete' %}"
+                         onclick="return showWarning(event, 'delete');" 
+                         class="tm-product-delete-link"
+                      >
                           <i class="far fa-trash-alt tm-product-delete-icon"></i>
                       </a>
                     </td>
@@ -120,7 +123,7 @@
                 <tbody>
 
                 {% for product in delete_products %}
-                <tr onclick="goToPage('update_product', '{{ product.id }}' )">
+                <tr onclick="window.location.href='{% url 'update_product' product.id %}'">
                     <td scope="row">
                       <div style="width: 50px; height: 50px; overflow: hidden;">
                         <img height="50px" width="50px" src="{{  product.product_images.all.0.product_image.url }}" alt="product">
@@ -131,7 +134,10 @@
                     <td>₹{{ product.selling_price | floatformat:0 }}</td>
                     <td>{{ product.updated_at|date:"d M H:i" }}</td>
                     <td>
-                      <a onclick="showWarning(event, 'product_action', 'active', '{{product.id}}')" class="tm-product-delete-link">
+                      <a href="{% url 'product_action' product.id 'active' %}"
+                         onclick="return showWarning(event, 'active');"
+                         class="tm-product-delete-link"
+                      >
                         <i class="bi bi-arrow-counterclockwise"></i>
                       </a>
                     </td>
@@ -204,7 +210,7 @@
                 <tbody>
 
                 {% for product in incomplete_produts %}
-                <tr onclick="goToPage('redirect-add-product', '{{ product.id }}' )">
+                <tr onclick="window.location.href='{% url 'redirect_add_product' product.id %}'">
                     <td scope="row">
                       <div style="width: 50px; height: 50px; overflow: hidden;">
                         {% if product.product_images.all %}
@@ -220,7 +226,10 @@
                     <td>{{ product.updated_at|date:"d M H:i" }}</td>
                     <td>
                       
-                      <a onclick="showWarning(event, 'product_action', 'permenentDelete', '{{product.id}}')" class="tm-product-delete-link">
+                      <a href="{% url 'product_action' product.id 'permenentDelete' %}"
+                         onclick="return showWarning(event, 'active');"
+                         class="tm-product-delete-link"
+                      >
                           <i class="far fa-trash-alt tm-product-delete-icon"></i>
                       </a>
                     </td>
@@ -248,23 +257,22 @@
       window.location.href = `/product_management/${url}/${productId}/`;
     }
 
-    function showWarning(event, url, action, productId) {
-      event.preventDefault(); // Prevent the default link click behavior
-      event.stopPropagation();
-      if (action == 'delete'){
-        if (confirm("Are you sure, you want to deactivate this product?")) {
-          window.location.href =  `/product_management/${url}/${action}/${productId}/` ; // Redirect to the delete URL if confirmed
-        }
-      }else if(action == 'active'){
-        if (confirm("Are you sure, you want to re activate this product?")) {
-          window.location.href =  `/product_management/${url}/${action}/${productId}/` ;
-        }
-      }else if(action=='permenentDelete'){
-        if (confirm("Are you sure, you want to permenantly delete this product?")) {
-          window.location.href =  `/product_management/${url}/${action}/${productId}/` ;
-        }
+    function showWarning(event, action) {
+      let message = "";
+
+      if (action === "delete") {
+        message = "Are you sure you want to deactivate this product?";
+      } else if (action === "active") {
+        message = "Are you sure you want to re-activate this product?";
+      } else if (action === "permenentDelete") {
+        message = "Are you sure you want to permanently delete this product?";
       }
-      
+
+      if (message && !confirm(message)) {
+        event.preventDefault();
+        return false;
+      }
+      return true;
     }
   </script>
 {% endblock scripts %}

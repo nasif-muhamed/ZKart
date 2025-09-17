@@ -1,12 +1,12 @@
 from django.shortcuts import render, HttpResponse, redirect
+from django.db.models import Sum, F, Func, Value
+from django.db.models.functions import Coalesce, Lower, Replace
+from django.db.models import Q
+from django.http import JsonResponse
+from . utils import product_list
 from . models import *
 from users . models import *
 from users . views import *
-from django.db.models import Sum, F, Func, Value
-from django.db.models.functions import Coalesce, Lower, Replace
-from django.core.paginator import Paginator
-from django.db.models import Q
-from django.http import JsonResponse
 
 
 # Products and Category related
@@ -41,69 +41,30 @@ def product_details(request, id):
         return redirect(user_home)
 
 
-def product_list(request, object):
-    page = int(request.GET.get('page',1))
-    
-    products_all = object.filter(is_active=True, category__is_active = True, stage = 'stage3').prefetch_related('product_images')
-
-    product_paginator = Paginator(products_all, 9)
-    products = product_paginator.get_page(page)
-    
-    start, end = 0, 0
-    costum_range = range(1, products.paginator.num_pages+1)
-    if products.paginator.num_pages > 3: 
-        if page == 1 or page == 2:
-            costum_range = range(1, 4)
-            end = products.paginator.num_pages
-        elif page == products.paginator.num_pages or page == products.paginator.num_pages-1:
-            costum_range = range(products.paginator.num_pages-2, products.paginator.num_pages+1)
-            start = 1
-        else:
-            costum_range = range(page-1, page+2)
-            start = 1
-            end = products.paginator.num_pages
-
-
-    category_ids = products_all.values_list('category', flat=True)  # Includes duplicates
-    categories= Category.objects.filter(is_active = True, id__in=set(category_ids))
-    brands = products_all.values_list('brand', flat= True)
-
-    user_wishlist = []
-    if request.user.is_authenticated:
-        user_wishlist = Wishlist.objects.filter(account = request.user.account).values_list('product', flat=True)
-
-    url_string = "?form_submitted={{ request.GET.form_submitted }}&search={{ request.GET.search }}&sort={{ request.GET.sort }}\
-    &gender={{ request.GET.gender }}{% for i in request|getlist:'category' %}&category={{i}}{%endfor%}{% for i in request|getlist:'brand' %}\
-    &brand={{i}}{%endfor%}&price_min={{ request.GET.price_min }}&price_max={{ request.GET.price_max }}"
-    context = {
-        'categories': categories,
-        'brands' : set(brands),
-        'products': products,
-        'range': costum_range,
-        'start': start,
-        'end': end,
-        'user_wishlist' : user_wishlist,
-        'url_string': url_string,
-    }
-
-    # return render(request, 'product_list.html', context)
-    return context
-
-
-def banner_list(request, id):
-    banner_obj = Banner.objects.get(id=id)
-    product_obj = banner_obj.products.all().filter(is_active=True, category__is_active = True).prefetch_related('product_images')
-    show = product_list (request, product_obj)
-    return render(request, 'product_list.html', show)
+# to delete
+# def banner_list(request, id):
+#     """List of products under a banner"""
+#     banner_obj = Banner.objects.get(id=id)
+#     product_obj = banner_obj.products.all().filter(is_active=True, category__is_active = True).prefetch_related('product_images')
+#     show = product_list (request, product_obj)
+#     return render(request, 'product_list.html', show)
 
 
 def all_list(request):
-    products_all = Product.objects.all().filter(is_active=True, category__is_active = True).prefetch_related('product_images')
-
-    show = product_list (request, products_all)
+    banner_id = request.GET.get('banner')
+    try:
+        if banner_id:
+                banner = Banner.objects.get(id=banner_id)
+                all_products = banner.products.all()
+        else:
+            all_products = Product.objects.all().filter(is_active=True, category__is_active = True).prefetch_related('product_images')
+    except:
+        all_products = []
+    show = product_list (request, all_products)
     return render(request, 'product_list.html', show)
 
 
+# test
 def fliter_products(request):
     show = search_list(request)
 
@@ -237,7 +198,6 @@ def search_list(request, search=''):
 
 
 # admin
-
 @login_required(login_url='admin_login')
 @user_passes_test(is_admin, login_url='/permission-denied/')
 def product_management(request):
@@ -297,7 +257,7 @@ def add_category(request):
             messages.error(request, 'Oops something went wrong')
             return redirect(add_category)
         
-        return redirect(add_category2, category.id)
+        return redirect(add_category_step2, category.id)
     
     context = {
 
@@ -306,7 +266,7 @@ def add_category(request):
 
 @login_required(login_url='admin_login')
 @user_passes_test(is_admin, login_url='/permission-denied/')
-def add_category2(request, category_id):
+def add_category_step2(request, category_id):
     category = Category.objects.get(id=category_id)
     if request.method == 'POST':
         size_name  = request.POST.get('size')
@@ -380,7 +340,7 @@ def update_category(request, category_id):
             return redirect(update_category)
 
 
-        return redirect(update_category2, category_id)
+        return redirect(update_category_step2, category_id)
 
     context = {
         'category' : category,
@@ -390,7 +350,7 @@ def update_category(request, category_id):
 
 @login_required(login_url='admin_login')
 @user_passes_test(is_admin, login_url='/permission-denied/')
-def update_category2(request, category_id):
+def update_category_step2(request, category_id):
     category = Category.objects.get(id=category_id)
     sizes = category.sizes.all()
 
@@ -451,7 +411,7 @@ def add_product(request):
             return redirect(product_management) 
         
         product.save()
-        return redirect(add_product2,product_id=product.id)
+        return redirect(add_product_step2,product_id=product.id)
     
     categories = Category.objects.filter(is_active=True)
     context = {
@@ -463,7 +423,6 @@ def add_product(request):
 @login_required(login_url='admin_login')
 @user_passes_test(is_admin, login_url='/permission-denied/')
 def image_saver(request, product_id):
-    
     if request.method == 'POST':
         image = request.FILES.get('image')
         product_id = int(product_id)
@@ -478,7 +437,7 @@ def image_saver(request, product_id):
 
 @login_required(login_url='admin_login')
 @user_passes_test(is_admin, login_url='/permission-denied/')
-def add_product2(request, product_id):
+def add_product_step2(request, product_id):
     product = Product.objects.get(id = product_id)
     if request.method == 'POST':
         selected_colors = request.POST.getlist('colors')
@@ -492,7 +451,7 @@ def add_product2(request, product_id):
                 variant.save()
         product.stage = 'stage2'
         product.save()
-        return redirect(add_product3,product_id=product_id)
+        return redirect(add_product_step3,product_id=product_id)
 
     colors = Color.objects.values_list('name', flat=True)
     sizes = product.category.sizes.all()
@@ -507,7 +466,7 @@ def add_product2(request, product_id):
 
 @login_required(login_url='admin_login')
 @user_passes_test(is_admin, login_url='/permission-denied/')
-def add_product3(request, product_id):
+def add_product_step3(request, product_id):
     product = Product.objects.get(id = product_id)
     variants = product.variants.all()
 
@@ -538,10 +497,10 @@ def redirect_add_product(request, product_id):
     try:
         product = Product.objects.get(id = product_id)
         if product.stage == 'stage1':
-            return redirect(add_product2, product.id)
+            return redirect(add_product_step2, product.id)
         
         elif product.stage == 'stage2':
-            return redirect(add_product3, product.id)
+            return redirect(add_product_step3, product.id)
 
     except:
         messages.error(request, 'Oops something went wrong')
@@ -551,8 +510,8 @@ def redirect_add_product(request, product_id):
 
 @login_required(login_url='admin_login')
 @user_passes_test(is_admin, login_url='/permission-denied/')
-def update_product(request, id):
-    product = Product.objects.get(id = id)
+def update_product(request, product_id):
+    product = Product.objects.get(id = product_id)
 
     if request.method == 'POST':
         title = request.POST.get('title')
@@ -568,15 +527,15 @@ def update_product(request, id):
             max_purchase_qty = int(max_purchase_qty)
         except:
             messages.error(request, 'Oops something went wrong.... Kindly try again.')
-            return redirect(update_product, id)
+            return redirect(update_product, product_id)
 
         if selling_price > original_price:
             messages.error(request, 'Orginal Price should be greater than Selling Price')
-            return redirect(update_product, id)
+            return redirect(update_product, product_id)
 
         if max_purchase_qty and (max_purchase_qty > 10 or max_purchase_qty < 1):
             messages.error(request, 'Max purchase quantity should be within 0 and 10')
-            return redirect(update_product, id)
+            return redirect(update_product, product_id)
 
         changes_detected = False
         if product.title != title and title != None:
@@ -606,7 +565,7 @@ def update_product(request, id):
         if changes_detected:
             product.save()
 
-        return redirect(update_product2, id) 
+        return redirect(update_product_step2, product_id)
         
     context = {
         'product': product,
@@ -616,8 +575,8 @@ def update_product(request, id):
 
 @login_required(login_url='admin_login')
 @user_passes_test(is_admin, login_url='/permission-denied/')
-def update_product2(request, id):
-    product = Product.objects.get(id = id)
+def update_product_step2(request, product_id):
+    product = Product.objects.get(id = product_id)
     product_images = product.product_images.all()
     colors = Color.objects.values_list('name', flat=True)
     sizes = product.category.sizes.values_list('name', flat=True)
@@ -628,13 +587,12 @@ def update_product2(request, id):
         selected_colors = request.POST.getlist('colors')
         selected_sizes = request.POST.getlist('sizes')
         all_size = list(variants_sizes) + selected_sizes
-       
+
         if selected_sizes:
             for color in variants_colors:
                 for size in selected_sizes:
                     variant = ProductVariant(product=product, color=Color.objects.get(name=color), size=product.category.sizes.get(name=size))
                     variant.save()
-        
 
         if selected_colors:
             for color in selected_colors:
@@ -648,13 +606,13 @@ def update_product2(request, id):
             product_image_obj.product_image = image
             product_image_obj.save()
 
-        return redirect(update_product3, id)
+        return redirect(update_product_step3, product_id)
 
     context = {
         'product': product,
         'colors': colors,
         'sizes': sizes,
-        'product_id': id,
+        'product_id': product_id,
         'product_images': product_images,
         'variants_sizes': variants_sizes,
         'variants_colors': variants_colors,
@@ -664,8 +622,8 @@ def update_product2(request, id):
 
 @login_required(login_url='admin_login')
 @user_passes_test(is_admin, login_url='/permission-denied/')
-def update_product3(request, id):
-    product = Product.objects.get(id = id)
+def update_product_step3(request, product_id):
+    product = Product.objects.get(id = product_id)
     variants = product.variants.all().order_by('quantity')
 
     if request.method == 'POST':
@@ -687,8 +645,8 @@ def update_product3(request, id):
 
 @login_required(login_url='admin_login')
 @user_passes_test(is_admin, login_url='/permission-denied/')
-def product_action(request, action, id):
-    product = Product.objects.get(id = id)
+def product_action(request, product_id, action):
+    product = Product.objects.get(id = product_id)
     if action == 'delete':
         product.is_active = False
         product.save()

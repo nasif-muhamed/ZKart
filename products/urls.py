@@ -2,36 +2,34 @@ from django.urls import path
 from . import views
 
 urlpatterns = [
-    path('product_details/<id>', views.product_details, name= 'product_details'),
-    path('product_list', views.all_list, name= 'product_list'),
-    path('banner_list/<id>', views.banner_list, name= 'banner_list'),
+    path('products/', views.all_list, name= 'product_list'),
+    path('product/<id>/', views.product_details, name= 'product_details'),
+    # path('banner_list/<id>/', views.banner_list, name= 'banner_list'), # to delete
     path('search_list/', views.search_list, name= 'search_list'),
     path('search_list/<search>/', views.search_list, name= 'search_list'),
 
     
     # admin side
-    path('product_management/', views.product_management, name= 'product_management'),
-    path('product_management/add_category/', views.add_category, name= 'add_category'),
-    path('product_management/add_category2/<int:category_id>', views.add_category2, name= 'add_category2'),
+    path('products-management/', views.product_management, name= 'product_management'),
+    
+    path('categories/add/', views.add_category, name= 'add_category'),
+    path('categories/<int:category_id>/add/step2/', views.add_category_step2, name= 'add_category_step2'),
+    path('categories/<int:category_id>/update/', views.update_category, name= 'update_category'),
+    path('categories/<int:category_id>/update/step2/', views.update_category_step2, name= 'update_category_step2'),
 
-    path('product_management/update_category/<int:category_id>', views.update_category, name= 'update_category'),
-    path('product_management/update_category2/<int:category_id>', views.update_category2, name= 'update_category2'),
-
-    path('product_management/add_product/', views.add_product, name= 'add_product'),
-    path('product_management/redirect-add-product/<int:product_id>/', views.redirect_add_product, name= 'redirect_add_product'),
-    path('product_management/image_saver/<int:product_id>/', views.image_saver, name= 'image_saver'),
-    path('product_management/add_product2/<int:product_id>/', views.add_product2, name= 'add_product2'),
-    path('product_management/add_product3/<int:product_id>/', views.add_product3, name= 'add_product3'),
-
-    path('product_management/update_product/<id>/', views.update_product, name= 'update_product'),
-    path('product_management/update_product2/<id>/', views.update_product2, name= 'update_product2'),
-    path('product_management/update_product3/<id>/', views.update_product3, name= 'update_product3'),
-
-    path('product_management/product_action/<action>/<id>/', views.product_action, name= 'product_action'),
+    path('products/add/', views.add_product, name= 'add_product'),
+    path('products/<int:product_id>/redirect/', views.redirect_add_product, name= 'redirect_add_product'),
+    path('products/<int:product_id>/save-image/', views.image_saver, name= 'image_saver'),
+    path('products/<int:product_id>/add/step2/', views.add_product_step2, name= 'add_product_step2'),
+    path('products/<int:product_id>/add/step3/', views.add_product_step3, name= 'add_product_step3'),
+    path('products/<int:product_id>/update/', views.update_product, name= 'update_product'),
+    path('products/<int:product_id>/update/step2/', views.update_product_step2, name= 'update_product_step2'),
+    path('products/<int:product_id>/update/step3/', views.update_product_step3, name= 'update_product_step3'),
+    path('products/<int:product_id>/action/<str:action>/', views.product_action, name= 'product_action'),
     
     path('dashboard/', views.admin_dashboard, name='admin_dashboard'),
     path('admin_profile/', views.admin_dashboard, name='admin_profile'),
 
     #test
-    path('filter', views.fliter_products, name= 'fliter_products'),
+    path('filter/', views.fliter_products, name= 'fliter_products'),
 ]

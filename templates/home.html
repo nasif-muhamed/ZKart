@@ -68,7 +68,7 @@
   <div id="carouselExampleAutoplaying" class="carousel slide" data-bs-ride="carousel">
     <div class="carousel-inner" style="height: 400px;">
       {% for banner in banners %}
-      <a href="{% url 'banner_list' banner.id %}">
+      <a href="{% url 'product_list' %}?banner={{ banner.id }}">
         <div class="carousel-item active">
           <img style="width: 100%;  object-fit: cover; object-position: top;" src="{{ banner.banner.url }}" class="d-block w-100" alt="{{ banner.title }}">
         </div>
