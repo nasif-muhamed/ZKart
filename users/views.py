@@ -18,7 +18,6 @@ from django.db.models.functions import Coalesce
 
 
 def user_redirect(request):
-
     if  not request.user.is_staff:
         return redirect(user_home)
     
@@ -34,10 +33,7 @@ def logout_page(request):
 
 @cache_control(no_cache=True,must_revalidate=True,no_store=True)
 def login_page(request):
-
-    context = {
-        
-    }
+    context = {}
 
     if request.user.is_authenticated:
         redirect_user = user_redirect(request)
@@ -64,9 +60,7 @@ def login_page(request):
     return render(request, 'signin.html', context)
 
 def forgot_password(request):
-    context = {
-        
-    }
+    context = {}
     if request.method=='POST':
         email = request.POST.get('email')
 
@@ -223,9 +217,7 @@ def otp_page(request):
     return render(request, 'signin.html', context)
 
 def register_page(request):
-    context = {
-        'request': request.method,
-    }
+    context = {'request': request.method}
 
     if request.user.is_authenticated:
         redirect_user = user_redirect(request)
@@ -246,7 +238,7 @@ def register_page(request):
             return render(request, 'signup.html', context)
         
         elif len(username) < 6:
-            messages.error(request, '*username must contain atleast 8 charecters')
+            messages.error(request, '*username must contain atleast 6 charecters')
 
         elif ' ' in username:
             messages.error(request, '*username should not contain space')
@@ -270,18 +262,17 @@ def register_page(request):
                 password=pass1,
                 is_active = False
             )
-            customer = Account.objects.create(user=user)
-            customer.referral_code = customer.generate_referral_code()
+
             if referral:
                 referrer = Account.objects.get(referral_code=referral)
                 referrer.wallet.balance += 100
-                customer.referred_by = referrer
-                wallet = Wallet.objects.create(account=customer, balance=100)
                 referrer.wallet.save()
-            else:
-                wallet = Wallet.objects.create(account=customer)
 
-            customer.save()
+                new_account = user.account
+                new_account.referred_by = referrer
+                new_account.wallet.balance += 100
+                new_account.save()
+                new_account.wallet.save()
 
             current_site = os.getenv('CURRENT_DOMAIN')
             mail_subject = 'Activate your account'
@@ -291,7 +282,7 @@ def register_page(request):
                                                                                      'token' : account_activation_token.make_token(user)})
             
             emailer = EmailMessage(
-                mail_subject, mail_message, to= [email] 
+                mail_subject, mail_message, to= [email]
             )
             emailer.send()
             messages.success(request, "Please check your email to complete the registration.")
@@ -324,7 +315,6 @@ def activate(request, uidb64, token):
 
 # to validate password.
 def is_password_valid(password):
-
     # checking min length and white spice not containing requirment
     if len(password) < 8 or ' ' in password:
         return False
@@ -350,7 +340,6 @@ def is_password_valid(password):
 
 
 def user_home(request):
-
     products = Product.objects.filter(is_active=True, category__is_active = True, stage = 'stage3').prefetch_related('product_images')
 
     latest = products.order_by('-created_at')[:5]
