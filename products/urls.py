@@ -27,8 +27,8 @@ urlpatterns = [
     path('products/<int:product_id>/update/step3/', views.update_product_step3, name= 'update_product_step3'),
     path('products/<int:product_id>/action/<str:action>/', views.product_action, name= 'product_action'),
     
-    path('dashboard/', views.admin_dashboard, name='admin_dashboard'),
-    path('admin_profile/', views.admin_dashboard, name='admin_profile'),
+    # path('dashboard/', views.admin_dashboard, name='admin_dashboard'),
+    # path('admin_profile/', views.admin_dashboard, name='admin_profile'),
 
     #test
     path('filter/', views.fliter_products, name= 'fliter_products'),

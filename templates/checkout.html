@@ -331,7 +331,12 @@
 <script src="{% static 'payment_integration/checkout_page.js' %}" type="text/javascript"></script>
 
 <script>
-    
+  let razorpayUrl = "{% url 'razorpaycheck' %}"
+  let statusPageUrl = "{% url 'order_success' 0 %}"
+  let retryStockCheckUrl = "{% url 'retry_payment_stock_check' %}"
+  let retryPaymentUrl = "{% url 'retry_payment' 0 %}"
+  let checkoutUrl = "{% url 'checkout_page' %}"
+
   /*
     document.getElementById('addAddressForm').addEventListener('submit', function(event) {
         event.preventDefault();

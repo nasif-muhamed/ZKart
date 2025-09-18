@@ -8,21 +8,23 @@ from django.utils import timezone
 from django.contrib.auth.decorators import login_required
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
-from django.db import transaction
-from . models import *
-from . utils import order_address_creator, get_delivery_charge, generate_unique_order_id, render_to_excel, render_to_pdf
-from users . models import *
-from users . views import *
-from products . models import *
-from products . views import *
+from django.db import transaction, DatabaseError
+from .models import *
+from .utils import order_address_creator, get_delivery_charge, generate_unique_order_id, render_to_excel, render_to_pdf
+from users.models import *
+from users.views import *
+from users.utils import send_mail
+from products.models import *
+from products.views import *
 
 coords_str = os.getenv("SELLER_HUB_COORDINATES", "9.9312,76.2673")  # Kochi
 SELLER_HUB_COORDINATES = tuple(map(float, coords_str.split(",")))
+SELLER_MAIL=os.getenv("SELLER_MAIL")
 FREE_DELIVERY_LIMIT = int(os.getenv("FREE_DELIVERY_LIMIT_IN_KM") or 100)
 DELIVERY_CHARGE_INTERVAL = int(os.getenv("DELIVERY_CHARGE_INTERVAL") or 50)
 DELIVERY_PREMIUM_PER_INTERVAL = int(os.getenv("DELIVERY_PREMIUM_PER_INTERVAL") or 20)
 COD_LIMIT_IN_INR=int(os.getenv("COD_LIMIT_IN_INR") or 1000)
-
+EXPECTED_ARRIVAL_IN_DAYS=int(os.getenv("EXPECTED_ARRIVAL_IN_DAYS") or 7)
 
 @login_required(login_url='/')
 def cart_view(request):
@@ -159,7 +161,6 @@ def update_cart(request):
 
 @login_required(login_url='/')
 def delete_cart_item(request):
-    
     if 'coupon_discount' in request.session:
         del request.session['coupon_discount']
         del request.session['applied_coupon']
@@ -170,8 +171,10 @@ def delete_cart_item(request):
     data = json.loads(request.body)
     item_id = data['item_id']
     item = OrderItem.objects.get(id = int(item_id))
+    if item.order.customer != request.user.account:
+        return JsonResponse({'success': False, })
     item.delete()
-    return JsonResponse({'success': True, })     
+    return JsonResponse({'success': True})     
 
 
 def get_delivery_charge_for_checkout(request):
@@ -457,7 +460,7 @@ def razorpaycheck(request):
 def order_success(request, order_id):
     order = Order.objects.get(id= int(order_id))
     if order.order_date:
-        expected_arrival = order.order_date + timedelta(days=7)
+        expected_arrival = order.order_date + timedelta(days=EXPECTED_ARRIVAL_IN_DAYS)
     else:
         expected_arrival = None
 
@@ -512,16 +515,12 @@ def user_order_details(request, order_id):
             order_item.status = 'return_request'
             order_item.save()
 
-            email = 'muhdnasifk@gmail.com'
+            email = SELLER_MAIL
             mail_subject = f'Return Request of product delivered at {order_item.completed_date.strftime("%Y-%m-%d")}' 
             mail_message = render_to_string('emailer/return_request_email.html', {'order_item': order_item,
                                                                                     'user' : request.user.username,})
-            emailer = EmailMessage(
-                mail_subject, mail_message, to= [email] 
-            )
-            emailer.send()
+            send_mail(email, mail_subject, mail_message)
 
-        
         elif 'return_cancel_btn' in request.POST:
             order_item_id = request.POST.get('return_cancel_btn')
             order_item = OrderItem.objects.get(id=int(order_item_id))
@@ -542,43 +541,47 @@ def user_order_details(request, order_id):
 
 @login_required(login_url='/')
 def user_order_cancel(request, order_item_id):
-    order_item = OrderItem.objects.get(id=int(order_item_id))
-    order_item.status = 'cancelled'
-    order_item.completed_date = timezone.now()
-    order_item.save()
-    order_item.product_variant.quantity += order_item.quantity
-    if order_item.payment_status == 'success':
-        wallet = request.user.account.wallet
-        wallet.deposit((order_item.selling_price*order_item.quantity)-order_item.coupon_discount)
-        order_item.payment_status = 'wallet'
-        wallet.save()
-    else:
-        order_item.payment_status = 'cancelled'
+    try:
+        order_item = OrderItem.objects.get(id=int(order_item_id))
+        order = order_item.order
+        with transaction.atomic():
+            order_item.status = 'cancelled'
+            order_item.completed_date = timezone.now()
+            order_item.save()
+            order_item.product_variant.quantity += order_item.quantity
+            if order_item.payment_status == 'success':
+                wallet = request.user.account.wallet
+                wallet.deposit((order_item.selling_price*order_item.quantity)-order_item.coupon_discount)
+                order_item.payment_status = 'wallet'
+                wallet.save()
+            else:
+                order_item.payment_status = 'cancelled'
 
-    order = order_item.order
-    if order.is_completed():
-        order.complete_date = timezone.now()
-        order.status = 'completed'
-        order.save()
+            if order.is_completed():
+                order.complete_date = timezone.now()
+                order.status = 'completed'
+                order.save()
 
-    order_item.save()
-    order_item.product_variant.product.save()
-    order_item.product_variant.save()
-    
-    email = 'muhdnasifk@gmail.com'
-    mail_subject = f'Order Item Cancelled'
-    mail_message = render_to_string('emailer/order_cancel_email.html', {'order_item': order_item,
-                                                                            'user' : request.user.username,})
-    emailer = EmailMessage(
-        mail_subject, mail_message, to= [email] 
-    )
-    emailer.send()
+            order_item.save()
+            order_item.product_variant.save()
+            order_item.product_variant.product.save()
+        
+            def send_cancel_email():
+                email = SELLER_MAIL
+                mail_subject = f'Order Item Cancelled'
+                mail_message = render_to_string('emailer/order_cancel_email.html', {'order_item': order_item,
+                                                                                    'user' : request.user.username,})
+                send_mail(email, mail_subject, mail_message)
+                
+            transaction.on_commit(send_cancel_email)
 
+    except Exception as e:
+        print('exception:', e)
+        messages.error(request, 'Something went wrong. Cancellation failed. Contact customer care')
     return redirect(user_order_details, order.id)
 
 
 # Admin side
-
 @login_required(login_url='admin_login')
 @user_passes_test(is_admin, login_url='/permission-denied/')
 def order_management(request):

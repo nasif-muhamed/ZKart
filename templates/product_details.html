@@ -266,7 +266,7 @@ const csrftoken = getCookie('csrftoken');
 
                     <div>
                       {% if user.is_authenticated and not user.is_staff %}
-                      <button class="btn btn-primary" id="add-to-cart">Add to cart</button>
+                      <button class="btn btn-primary" id="add-to-cart" type="submit">Add to cart</button>
                       {% else %}
                       <button class="btn btn-primary" type="submit" disabled>Add to cart</button>
                       <p style="font-size: x-small; color: red; font-size: 600; margin-right: 5px;">Login to use add to cart</p>

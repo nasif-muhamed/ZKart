@@ -5,9 +5,9 @@ import string
 from datetime import datetime
 from django.http import HttpResponse
 from django.template.loader import get_template
-from .models import OrderAddress, Address, Order
 from geopy.geocoders import Nominatim
 from geopy.distance import geodesic
+from .models import OrderAddress, Address, Order
 
 coords_str = os.getenv("SELLER_HUB_COORDINATES", "9.9312,76.2673")  # Kochi
 SELLER_HUB_COORDINATES = tuple(map(float, coords_str.split(",")))
@@ -153,5 +153,3 @@ def render_to_pdf(template_src, context_dict):
         response = HttpResponse(result.getvalue(), content_type='application/pdf')
         return response
     return None
-
-

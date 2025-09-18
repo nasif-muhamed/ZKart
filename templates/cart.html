@@ -310,7 +310,7 @@
 
     function updateUserOrder(itemId, action){
 
-      var url = '/update-cart/'
+      var url = "{% url 'update_cart' %}";
 
       fetch(url, {
         method:'POST',
@@ -338,7 +338,7 @@
         itemId = this.dataset.order_item
         console.log(itemId)
         if (confirm("Are you sure, you want to delete this item?")) {
-          var url = '/delete-cart-item/'
+          var url = "{% url 'delete_cart_item' %}";
 
           fetch(url, {
             method:'POST',

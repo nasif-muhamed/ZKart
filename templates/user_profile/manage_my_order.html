@@ -129,7 +129,7 @@
 									<h2 class="col-12 "><strong>Order Summary</strong></h2>
 							</div>
 								{% for order in orders %}
-								<div class="order-container" onclick="window.location.href='/my-order-details/{{ order.id }}/'">
+								<div class="order-container" onclick="window.location.href='{% url "user_order_details" order.id %}'">
 									<div class="order-header">Order Id: # <small>{{ order.order_identifier }}</small></div>
 
 									<div class="order-info">

@@ -1,6 +1,5 @@
 import os
 from django.shortcuts import render, redirect, HttpResponse
-from . models import *
 from django.contrib.auth.models import User
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import login_required
@@ -8,14 +7,16 @@ from django.views.decorators.cache import cache_control
 from django.db import IntegrityError
 from django.urls import reverse
 from django.contrib import messages
-from products . models import *
-from orders . models import *
 from django.db.models import F, Sum, Value, FloatField, IntegerField
 from django.db.models import Q, Count, Case, When
 from django.core.exceptions import ValidationError
 from django.http import JsonResponse
 from django.db.models.functions import Coalesce
-from . validators import validate_register_data, is_password_valid
+from .validators import validate_register_data, is_password_valid
+from .models import *
+from .utils import send_mail
+from products.models import *
+from orders.models import *
 
 
 def user_redirect(request):
@@ -25,12 +26,14 @@ def user_redirect(request):
     if request.user.is_superuser:
         return redirect(admin_dashboard)
 
+
 def logout_page(request):
     if request.user.is_staff:
         logout(request)
         return redirect(admin_login)
     logout(request)
     return redirect(login_page)
+
 
 @cache_control(no_cache=True,must_revalidate=True,no_store=True)
 def login_page(request):
@@ -85,11 +88,7 @@ def send_otp(request, email):
     try:
         mail_subject = 'Forgot Password OTP'
         mail_message = render_to_string('emailer/forgot_otp.html', { 'otp': otp })
-        
-        emailer = EmailMessage(
-            mail_subject, mail_message, to= [email] 
-        )
-        emailer.send()
+        send_mail(email, mail_subject, mail_message)
         messages.success(request, "Please check your email for OTP. You have one minute to verify OTP")
 
         request.session['otp_email'] = email
@@ -204,7 +203,6 @@ from django.template.loader import render_to_string
 from django.utils.http import urlsafe_base64_decode, urlsafe_base64_encode
 from django.utils.encoding import force_bytes, force_str
 from . tokens import account_activation_token
-from django.core.mail import EmailMessage
 from django.contrib.auth import get_user_model
 
 def otp_page(request):
@@ -256,13 +254,10 @@ def register_page(request):
                                                                                      'uid' : urlsafe_base64_encode(force_bytes(user.pk)),
                                                                                      'token' : account_activation_token.make_token(user)})
             
-            emailer = EmailMessage(
-                mail_subject, mail_message, to= [email]
-            )
-            emailer.send()
+            send_mail(email, mail_subject, mail_message)
             messages.success(request, "Please check your email to complete the registration.")
-
             return redirect(login_page)
+        
         else:
             if error == 'pass_error':
                 context['pass_error'] = True
@@ -702,7 +697,7 @@ def admin_login(request):
 from . charts import *
 
 from django.db.models.functions import TruncDate, TruncMonth, TruncYear
-@login_required(login_url='admin-login')
+@login_required(login_url='admin_login')
 @user_passes_test(is_admin, login_url='/permission-denied/')
 def admin_dashboard(request):
     chart_filter = request.GET.get('filter', 'daily')
@@ -835,7 +830,7 @@ def admin_dashboard(request):
     return render(request, 'admin_page/dashboard.html', context)
 
 
-@login_required(login_url='admin-login')
+@login_required(login_url='admin_login')
 @user_passes_test(is_admin, login_url='/permission-denied/')
 def user_management(request):
 
@@ -859,7 +854,7 @@ def user_management(request):
     return render(request, 'admin_page/user_management.html', context)
 
 
-@login_required(login_url='admin-login')
+@login_required(login_url='admin_login')
 @user_passes_test(is_admin, login_url='/permission-denied/')
 def user_action(request, user_id, action):
     costomer = Account.objects.get(id = user_id)

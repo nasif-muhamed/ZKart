@@ -11,7 +11,7 @@ $(document).ready(function() {
             
             $.ajax({
                 method: 'POST', 
-                url: '/proceed-to-pay-razorpay/',
+                url: razorpayUrl,
                 data: JSON.stringify({'selectedAddress': selectedAddress}),
                 headers: {
                     'Content-Type': 'application/json',
@@ -38,12 +38,12 @@ $(document).ready(function() {
 
                             $.ajax({
                                 method: 'POST', 
-                                url: '/checkout/',
+                                url: checkoutUrl,
                                 data: data,
                                 success: function(responsec) {
                                     alert(`Your order is successful. Thank You for Shopping with us`)
                                     alert(`Your Payment ID:${responseb.razorpay_payment_id}`);
-                                    window.location.href = `/order-success/${responsec.order_id}/`
+                                    window.location.href = statusPageUrl.replace('0', responsec.order_id)
                                 },
 
                                 error: function(xhr, status, error) {
@@ -88,13 +88,11 @@ $(document).ready(function() {
 
                         $.ajax({
                             method: 'POST', 
-                            url: '/checkout/',
+                            url: checkoutUrl,
                             data: data,
                             success: function(responsed) {
                                 alert(`Your Payment is Failed. Continue payment from My Orders`)
-                                alert(`Your Payment ID:${response.error.metadata.payment_id}`);
-                                alert(`Your Order ID:${response.error.metadata.order_id}`);
-                                window.location.href = `/order-success/${responsed.order_id}/`
+                                window.location.href = statusPageUrl.replace('0', responsed.order_id)
                             },
 
                             error: function(xhr, status, error) {
@@ -142,7 +140,7 @@ $(document).ready(function() {
         }
         $.ajax({
             method: 'POST', 
-            url: `/retry-stock-check/`,
+            url: retryStockCheckUrl,
             data: data,
             success: function(response) {
                 order_identifier = response.order_identifier
@@ -165,7 +163,7 @@ $(document).ready(function() {
         
                         $.ajax({
                             method: 'POST', 
-                            url: `/retry-payment/${orderId}/`,
+                            url: retryPaymentUrl.replace('0', responsed.order_id),
                             data: data,
                             success: function(responsec) {
                                 alert(`Your order is successful. Thank You for Shopping with us`)
@@ -248,7 +246,7 @@ $(document).ready(function() {
             }
             $.ajax({
                 method: 'POST', 
-                url: '/checkout/',
+                url: checkoutUrl,
                 data: data,
                 success: function(response) {
                     console.log(response);
