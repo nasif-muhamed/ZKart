@@ -214,7 +214,7 @@ const csrftoken = getCookie('csrftoken');
 
                         <button  data-size="{{variant.size.name}}" data-color="{{variant.color.name}}" data-quantityleft="{{variant.quantity}}" 
                                  data-variant_id="{{variant.id}}" id="size-bottun"
-                        {% if variant.quantity != 0 %}
+                        {% if variant.quantity != 0 and variant.quantity != None %}
                         class="btn button-no-zero size-btn"
                         {% else %}
                         class="button-zero btn" disabled
@@ -225,7 +225,7 @@ const csrftoken = getCookie('csrftoken');
 
                         <h5 style="margin-top: 5px;">
 
-                          {% if variant.quantity == 0 %}
+                          {% if variant.quantity == 0 or variant.quantity == None %}
                           Unavailable
                           {% elif variant.quantity < 10 %}
                           {{ variant.quantity }} Left

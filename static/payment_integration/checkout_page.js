@@ -69,14 +69,6 @@ $(document).ready(function() {
                     var rzp1 = new Razorpay(options);
 
                     rzp1.on('payment.failed', function (response){
-                        // alert(response.error.code);
-                        alert(response.error.description);
-                        // alert(response.error.source);
-                        // alert(response.error.step);
-                        alert(response.error.reason);
-                        // alert(response.error.metadata.order_id);
-                        // alert(response.error.metadata.payment_id);
-
                         data = {
                             'selectedAddress': selectedAddress,
                             'selectedPayment' : 'razorpay',
@@ -151,7 +143,6 @@ $(document).ready(function() {
                     "image": "https://example.com/your_logo",
                     "order_id": order_identifier,
                     "handler": function (responseb){
-                        // alert(responseb.razorpay_payment_id)
                         data = {
                             // 'selectedAddress': selectedAddress,
                             // 'selectedPayment' : 'razorpay',
@@ -163,7 +154,7 @@ $(document).ready(function() {
         
                         $.ajax({
                             method: 'POST', 
-                            url: retryPaymentUrl.replace('0', responsed.order_id),
+                            url: retryPaymentUrl.replace('0', orderId),
                             data: data,
                             success: function(responsec) {
                                 alert(`Your order is successful. Thank You for Shopping with us`)
@@ -194,8 +185,6 @@ $(document).ready(function() {
                 var rzp1 = new Razorpay(options);
         
                 rzp1.on('payment.failed', function (response){
-                    alert(response.error.description);
-                    alert(response.error.reason);
                     alert('Contact costomer Care if your amount is debited')
                 });
         
@@ -226,46 +215,3 @@ $(document).ready(function() {
     });
 
 });
-
-/*
-$(document).ready(function() {
-    $('.payWithRazorpay').click(function(e) {
-        e.preventDefault();
-        console.log('success');
-
-        var selectedAddress = $('input[name="selectedAddress"]:checked').val();
-        console.log(selectedAddress)
-        
-        if (selectedAddress) {
-            console.log('Selected Address ID:', selectedAddress);
-            data = {
-                'selectedAddress': selectedAddress,
-                'selectedPayment' : 'razorpay',
-                'payment_id' : 'ksdfksdfjl',
-                csrfmiddlewaretoken : csrftoken,
-            }
-            $.ajax({
-                method: 'POST', 
-                url: checkoutUrl,
-                data: data,
-                success: function(response) {
-                    console.log(response);
-                    alert('your order is successful')
-                    window.location.href = `/order-success/${response.order_id}/`
-                    
-                },
-
-                error: function(xhr, status, error) {
-                    console.error(xhr.responseText);
-                    alert('Oops something went wrong')
-                },
-            });
-
-        } else {
-            alert('Please select an address before proceeding.');
-        }
-        
-    });
-});
-
-*/
