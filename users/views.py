@@ -12,7 +12,7 @@ from django.db.models import Q, Count, Case, When
 from django.core.exceptions import ValidationError
 from django.http import JsonResponse
 from django.db.models.functions import Coalesce
-from .validators import validate_register_data, is_password_valid
+from .validators import validate_register_data, is_password_valid, validate_profile_data
 from .models import *
 from .utils import send_mail
 from products.models import *
@@ -375,7 +375,6 @@ def user_referral(request):
 
 @login_required(login_url='/')
 def user_profile(request):
-
     if request.user.is_authenticated and not request.user.is_staff:
         account = Account.objects.get(user= request.user)
         if request.method == 'POST':
@@ -385,29 +384,34 @@ def user_profile(request):
             dob = request.POST.get('dob')
             mobile = request.POST.get('mobile')
             
-            changes = False
-            user = account.user
-            if first_name != user.first_name or last_name != user.last_name:
-                if first_name != user.first_name and first_name:
-                    user.first_name = first_name
+            validated, error = validate_profile_data(first_name, last_name, gender, dob, mobile)
+            if validated:
+                changes = False
+                user = account.user
+                if first_name != user.first_name or last_name != user.last_name:
+                    if first_name != user.first_name and first_name:
+                        user.first_name = first_name
 
-                if last_name != user.last_name and last_name:
-                    user.last_name = last_name
-                
-                changes = True
+                    if last_name != user.last_name and last_name:
+                        user.last_name = last_name
+                    
+                    changes = True
 
 
-            if gender != account.gender or dob != str(account.dob) or mobile != account.phone_number:
-                if gender != account.gender and gender:
-                    account.gender = gender
+                if gender != account.gender or dob != str(account.dob) or mobile != account.phone_number:
+                    if gender != account.gender and gender:
+                        account.gender = gender
 
-                if dob != str(account.dob) and dob:
-                    account.dob = dob
-                
-                if mobile != account.phone_number and mobile:
-                    account.phone_number = mobile
+                    if dob != str(account.dob) and dob:
+                        account.dob = dob
+                    
+                    if mobile != account.phone_number and mobile:
+                        account.phone_number = mobile
 
-                changes = True
+                    changes = True
+            else:
+                messages.error(request, error)
+                return redirect(user_profile)  
 
             try:
                 # put it into if changes: after review 

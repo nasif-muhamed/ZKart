@@ -1,6 +1,8 @@
 import re
 from .models import Account
 from django.contrib.auth import get_user_model
+from django.utils.timezone import now
+from datetime import date
 
 User = get_user_model()
 USERNAME_PATTERN = r'^[a-z0-9_]+$'
@@ -69,5 +71,42 @@ def validate_register_data(username, email, pass1, pass2, referral):
 
     if referral and not all_accounts.filter(referral_code = referral).exists():
         return False, 'Referral Code not exist.'
+
+    return True, None
+
+
+def validate_profile_data(first_name, last_name, gender, dob, mobile):
+    if first_name is not None:
+        if not re.match(r"^[A-Za-z\-\' ]+$", first_name):
+            return False, "Invalid first name. Only letters, spaces, hyphens, and apostrophes are allowed."
+        if len(first_name) < 2:
+            return False, "First name must be at least 2 characters long."
+
+    if last_name is not None:
+        if not re.match(r"^[A-Za-z\-\' ]+$", last_name):
+            return False, "Invalid last name. Only letters, spaces, hyphens, and apostrophes are allowed."
+        if len(last_name) < 2:
+            return False, "Last name must be at least 2 characters long."
+
+    if gender is not None:
+        valid_genders = [choice[0] for choice in Account.GENDER_CHOICES]
+        if gender not in valid_genders:
+            return False, f"Invalid gender. Must be one of {', '.join(valid_genders)}."
+
+    if dob is not None:
+        if isinstance(dob, str):
+            try:
+                dob = date.fromisoformat(dob)  # expects "YYYY-MM-DD"
+            except ValueError:
+                return False, "Invalid date format for date of birth. Use YYYY-MM-DD."
+
+        today = now().date()
+        age = today.year - dob.year - ((today.month, today.day) < (dob.month, dob.day))
+        if age < 12:
+            return False, "Age must be at least 12 years."
+
+    if mobile is not None:
+        if not re.fullmatch(r"\d{10}", str(mobile)):
+            return False, "Invalid mobile number. Must be exactly 10 digits."
 
     return True, None
