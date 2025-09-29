@@ -12,7 +12,7 @@ from django.db.models import Q, Count, Case, When
 from django.core.exceptions import ValidationError
 from django.http import JsonResponse
 from django.db.models.functions import Coalesce
-from .validators import validate_register_data, is_password_valid, validate_profile_data
+from .validators import validate_register_data, is_password_valid, validate_profile_data, validate_address_data, validate_address_creation
 from .models import *
 from .utils import send_mail
 from products.models import *
@@ -436,7 +436,6 @@ def user_profile(request):
 from decimal import Decimal
 @login_required(login_url='/')
 def address_management(request):
-
     if request.user.is_authenticated and not request.user.is_staff:
         account = Account.objects.get(user= request.user)
         addresses = Address.objects.filter(account=account)
@@ -450,27 +449,33 @@ def address_management(request):
             state = request.POST.get('state')
             pin_code = request.POST.get('pin_code')
             country = request.POST.get('country')
-            default = 'default' in request.POST
+            validated, validation_error = validate_address_creation(name, mobile, address_line1, address_line2, city, state, pin_code, country)
             next_url = request.POST.get('next', '/')
             checkout_access = request.POST.get('checkout_access')
-            latitude = request.POST.get('latitude')
-            longitude = request.POST.get('longitude')
-            if latitude is not None and longitude is None:
-                latitude, longitude = Decimal(latitude), Decimal(longitude)
 
-            if default and len(addresses)>0:
-                previous = addresses.get(default=True) 
-                previous.default = False
-                previous.save()
+            if validated:
+                default = 'default' in request.POST
+                latitude = request.POST.get('latitude')
+                longitude = request.POST.get('longitude')
+                if latitude is not None and longitude is None:
+                    latitude, longitude = Decimal(latitude), Decimal(longitude)
 
-            if not default and not len(addresses):
-                default = True
+                if default and len(addresses)>0:
+                    previous = addresses.get(default=True) 
+                    previous.default = False
+                    previous.save()
 
-            new_address = Address(account=account, name=name, mobile=mobile, address_line1=address_line1, address_line2=address_line2, \
-                                  city=city, state=state, pin_code=pin_code, country=country, default=default, latitude=latitude, longitude=longitude)
-            
-            new_address.save()
-            messages.success(request, 'Address added successfully')
+                if not default and not len(addresses):
+                    default = True
+
+                new_address = Address(account=account, name=name, mobile=mobile, address_line1=address_line1, address_line2=address_line2, \
+                                    city=city, state=state, pin_code=pin_code, country=country, default=default, latitude=latitude, longitude=longitude)
+                
+                new_address.save()
+                messages.success(request, 'Address added successfully')
+
+            else:
+                messages.error(request, validation_error)
 
             if checkout_access:
                 request.session['checkout_access'] = True
@@ -528,60 +533,63 @@ def edit_address(request, address_id):
         state = request.POST.get('state')
         pin_code = request.POST.get('pin_code')
         country = request.POST.get('country')
-        default = 'default' in request.POST
-        latitude = request.POST.get('latitude')
-        longitude = request.POST.get('longitude')
-        if latitude and longitude and latitude is not None and longitude is not None:
-            latitude, longitude = Decimal(latitude), Decimal(longitude)
+        validated, validation_error = validate_address_data(name, mobile, address_line1, address_line2, city, state, pin_code, country)
+        if validated:
+            default = 'default' in request.POST
+            latitude = request.POST.get('latitude')
+            longitude = request.POST.get('longitude')
+            if latitude and longitude and latitude is not None and longitude is not None:
+                latitude, longitude = Decimal(latitude), Decimal(longitude)
+                
+            update = False
+            if address.name != name and name:
+                address.name = name
+                update = True
+
+            if address.mobile != mobile and mobile:
+                address.mobile = mobile
+                update = True
             
-        update = False
-        if address.name != name and name:
-            address.name = name
-            update = True
+            if address.address_line1 != address_line1 and address_line1:
+                address.address_line1 = address_line1
+                update = True
 
-        if address.mobile != mobile and mobile:
-            address.mobile = mobile
-            update = True
-        
-        if address.address_line1 != address_line1 and address_line1:
-            address.address_line1 = address_line1
-            update = True
+            if address.address_line2 != address_line2 and address_line2:
+                address.address_line2 = address_line2
+                update = True
 
-        if address.address_line2 != address_line2 and address_line2:
-            address.address_line2 = address_line2
-            update = True
+            if address.city != city and city:
+                address.city = city
+                update = True
 
-        if address.city != city and city:
-            address.city = city
-            update = True
+            if address.state != state and state:
+                address.state = state
+                update = True
 
-        if address.state != state and state:
-            address.state = state
-            update = True
+            if address.pin_code != pin_code and pin_code:
+                address.pin_code = pin_code
+                address.latitude = latitude
+                address.longitude = longitude
+                update = True
 
-        if address.pin_code != pin_code and pin_code:
-            address.pin_code = pin_code
-            address.latitude = latitude
-            address.longitude = longitude
-            update = True
+            if address.country != country and country:
+                address.country = country
+                update = True
 
-        if address.country != country and country:
-            address.country = country
-            update = True
+            if address.default != default and default:
+                previous = Address.objects.get(account=request.user.account, default=True)
+                previous.default = False
+                previous.save()
+                address.default = True
+                update = True
 
-        if address.default != default and default:
-            previous = Address.objects.get(account=request.user.account, default=True)
-            previous.default = False
-            previous.save()
-            address.default = True
-            update = True
-
-        if update:
-            address.save()
-            messages.success(request, 'Address updated successfully.')
+            if update:
+                address.save()
+                messages.success(request, 'Address updated successfully.')
+            else:
+                messages.info(request, 'No edits found.')
         else:
-            messages.info(request, 'No edits found.')
-            
+            messages.error(request, validation_error)
         return redirect(address_management)
     
     return redirect(address_management)

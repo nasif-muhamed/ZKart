@@ -51,6 +51,18 @@ def validate_username(value):
     return True, None
 
 
+def validate_name(value):
+    return re.match(r"^[A-Za-z\-\' ]+$", value)
+
+
+def validate_phone_number(value):
+    return re.fullmatch(r"\d{10}", str(value))
+
+
+def validate_pincode(value):
+    return re.fullmatch(r"\d{6}", str(value))
+
+
 def validate_register_data(username, email, pass1, pass2, referral):
     if not all([username, email, pass1, pass2]):
         return False, 'All fields are required.'
@@ -77,13 +89,13 @@ def validate_register_data(username, email, pass1, pass2, referral):
 
 def validate_profile_data(first_name, last_name, gender, dob, mobile):
     if first_name is not None:
-        if not re.match(r"^[A-Za-z\-\' ]+$", first_name):
+        if not validate_name(first_name):
             return False, "Invalid first name. Only letters, spaces, hyphens, and apostrophes are allowed."
         if len(first_name) < 2:
             return False, "First name must be at least 2 characters long."
 
     if last_name is not None:
-        if not re.match(r"^[A-Za-z\-\' ]+$", last_name):
+        if not validate_name(last_name):
             return False, "Invalid last name. Only letters, spaces, hyphens, and apostrophes are allowed."
         if len(last_name) < 2:
             return False, "Last name must be at least 2 characters long."
@@ -96,7 +108,7 @@ def validate_profile_data(first_name, last_name, gender, dob, mobile):
     if dob is not None:
         if isinstance(dob, str):
             try:
-                dob = date.fromisoformat(dob)  # expects "YYYY-MM-DD"
+                dob = date.fromisoformat(dob)
             except ValueError:
                 return False, "Invalid date format for date of birth. Use YYYY-MM-DD."
 
@@ -106,7 +118,64 @@ def validate_profile_data(first_name, last_name, gender, dob, mobile):
             return False, "Age must be at least 12 years."
 
     if mobile is not None:
-        if not re.fullmatch(r"\d{10}", str(mobile)):
+        if not validate_phone_number(mobile):
             return False, "Invalid mobile number. Must be exactly 10 digits."
 
     return True, None
+
+
+def validate_address_data(name=None, mobile=None, address_line1=None, address_line2=None, city=None, state=None, pin_code=None, country=None):
+    if name:
+        if not validate_name(name):
+            return False, "Invalid name. Only letters, spaces, hyphens, and apostrophes are allowed."
+        if len(name) < 2:
+            return False, "Name must be at least 2 characters long."
+
+    if mobile and not validate_phone_number(mobile):
+        return False, "Invalid mobile number. Must be exactly 10 digits."
+
+    if address_line1 and len(address_line1.strip()) < 5:
+        return False, "Address Line 1 must be at least 5 characters long."
+
+    if address_line2 and len(address_line2.strip()) < 3:
+        return False, "Address Line 2 must be at least 3 characters long if provided."
+
+    if city and not validate_name(city):
+        return False, "Invalid city. Only letters, spaces, and hyphens are allowed."
+
+    if state and not validate_name(state):
+        return False, "Invalid state. Only letters, spaces, and hyphens are allowed."
+
+    if pin_code and not validate_pincode(pin_code):
+        return False, "Invalid PIN code. Must be exactly 6 digits."
+
+    if country and not validate_name(country):
+        return False, "Invalid country. Only letters, spaces, and hyphens are allowed."
+
+    return True, None
+
+
+def validate_address_creation(name, mobile, address_line1, address_line2, city, state, pin_code, country):
+    if not name:
+        return False, "Name is required."
+
+    if not mobile:
+        return False, "Mobile number is required."
+
+    if not address_line1:
+        return False, "Address Line 1 is required."
+
+    if not city:
+        return False, "City is required."
+
+    if not state:
+        return False, "State is required."
+
+    if not pin_code:
+        return False, "PIN code is required."
+
+    if not country:
+        return False, "Country is required."
+
+    return validate_address_data(name, mobile, address_line1, address_line2, city, state, pin_code, country)
+

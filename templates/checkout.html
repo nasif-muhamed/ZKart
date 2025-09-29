@@ -66,6 +66,10 @@
       max-width: 600px;
       margin: auto;
   }
+  .alert-error {
+    background-color: rgba(255, 0, 0, 0.396);
+    color: white;
+  }
 </style>
 
 {% endblock header %}
@@ -78,8 +82,18 @@
       <div class="row heading p-3 mb-5" >
         <h2 class="col-12 my-3"> <strong>Delivery Address</strong> </h2>
       </div>
-      <div class="row">
 
+      {% if messages %}
+      <div class="alert-container">
+          {% for message in messages %}
+          <div class="alert alert-{{ message.tags }}" role="alert">
+              {{ message }}
+          </div>
+          {% endfor %}
+      </div>
+      {% endif %}
+
+      <div class="row">
         <!-- Modal add address -->
         <div class="modal fade" id="addAddressModal" tabindex="-1" role="dialog" aria-labelledby="addAddressModalLabel" aria-hidden="true">
           <div class="modal-dialog modal-lg " role="document" style="margin-top: 200px;">
