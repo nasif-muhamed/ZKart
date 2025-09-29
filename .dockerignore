@@ -1,27 +1,35 @@
 # Environment variables
-zkart/.env
 *.env
+.env
 
 # Python bytecode
 *.pyc
 __pycache__/
+.pytest_cache/
 
 # SQLite DB
 db.sqlite3
 
 # Virtual environment
 venv/
-/venv
 
 # Uploaded media files
-/media
+media/
+staticfiles/
 
 # Git
 .git
 .gitignore
 
+# Docker-specific
+Dockerfile
+docker-compose*.yml
+docker-compose*.yaml
+
 # Logs
 *.log
+logs/
+*.pot
 
 # IDE/editor config
 .vscode/
