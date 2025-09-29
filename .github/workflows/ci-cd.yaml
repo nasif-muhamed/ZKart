@@ -13,7 +13,7 @@ env:
   DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
   DOCKER_TOKEN: ${{ secrets.DOCKER_TOKEN }}
   IMAGE_NAME: ${{ vars.IMAGE_NAME }}
-  IMAGE_NAME: ${{ vars.IMAGE_TAG }}
+  IMAGE_TAG: ${{ vars.IMAGE_TAG }}
 
 jobs:
   build:
