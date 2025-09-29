@@ -1,13 +1,13 @@
 name: CI - Docker Build and Push
 
 on:
-  # It'll run the jobs only in case of manual triggrer
-  workflow_dispatch:
+  # # It'll run the jobs only in case of manual triggrer
+  # workflow_dispatch:
     
   # It'll run the jobs in case of a new push
-  # push:
-  #   branches:
-  #     - main  
+  push:
+    branches:
+      - main  
 
 env:
   DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
@@ -42,5 +42,5 @@ jobs:
           context: .
           push: true
           tags: |
-            ${{ env.DOCKERHUB_USERNAME }}/${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }}
-            ${{ env.DOCKERHUB_USERNAME }}/${{ env.IMAGE_NAME }}:${{ github.sha }}
+            ${{ env.DOCKER_USERNAME }}/${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }}
+            ${{ env.DOCKER_USERNAME }}/${{ env.IMAGE_NAME }}:${{ github.sha }}
