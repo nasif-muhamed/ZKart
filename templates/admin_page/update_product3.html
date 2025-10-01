@@ -3,6 +3,14 @@
 
 {% block header %}
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+
+<style>
+  .alert-error, .delete-item-button{
+    background-color: rgba(255, 0, 0, 0.396);
+    color: white;
+  }
+</style>
+
 {% endblock header %}
 
 
@@ -10,6 +18,16 @@
 
 <div class="col-sm-12 col-md-12 col-lg-8 col-xl-8 tm-block-col mx-auto mt-5">
   <div class="tm-bg-primary-dark tm-block tm-block-products" style="min-height: 1000px;">
+    {% if messages %}
+    <div class="alert-container">
+        {% for message in messages %}
+        <div class="alert alert-{{ message.tags }}" role="alert">
+            {{ message }}
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
     <form method="post">
       {% csrf_token %}
 
@@ -18,12 +36,10 @@
         <table class="table table-hover tm-table-small tm-product-table">
             <thead>
             <tr>
-                
-                <th scope="col">color</th>
-                <th scope="col">size</th>
-                <th scope="col">quantity</th>
-                <th scope="col">status</th>
-
+              <th scope="col">color</th>
+              <th scope="col">size</th>
+              <th scope="col">quantity</th>
+              <th scope="col">status</th>
             </tr>
             </thead>
             <tbody>

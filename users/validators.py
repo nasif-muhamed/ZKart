@@ -6,6 +6,7 @@ from datetime import date
 
 User = get_user_model()
 USERNAME_PATTERN = r'^[a-z0-9_]+$'
+NAME_PATTERN = r"^[A-Za-z\-\' ]+$"
 
 
 def is_password_valid(password):
@@ -52,7 +53,7 @@ def validate_username(value):
 
 
 def validate_name(value):
-    return re.match(r"^[A-Za-z\-\' ]+$", value)
+    return re.match(NAME_PATTERN, value)
 
 
 def validate_phone_number(value):
@@ -93,12 +94,16 @@ def validate_profile_data(first_name, last_name, gender, dob, mobile):
             return False, "Invalid first name. Only letters, spaces, hyphens, and apostrophes are allowed."
         if len(first_name) < 2:
             return False, "First name must be at least 2 characters long."
+        if len(re.findall(r'[a-zA-Z]', first_name)) < 2:
+            return False, "Name must contain at least 2 alphabets."
 
     if last_name is not None:
         if not validate_name(last_name):
             return False, "Invalid last name. Only letters, spaces, hyphens, and apostrophes are allowed."
         if len(last_name) < 2:
             return False, "Last name must be at least 2 characters long."
+        if len(re.findall(r'[a-zA-Z]', last_name)) < 2:
+            return False, "Name must contain at least 2 alphabets."
 
     if gender is not None:
         valid_genders = [choice[0] for choice in Account.GENDER_CHOICES]
@@ -130,6 +135,8 @@ def validate_address_data(name=None, mobile=None, address_line1=None, address_li
             return False, "Invalid name. Only letters, spaces, hyphens, and apostrophes are allowed."
         if len(name) < 2:
             return False, "Name must be at least 2 characters long."
+        if len(re.findall(r'[a-zA-Z]', name)) < 2:
+            return False, "Name must contain at least 2 alphabets."
 
     if mobile and not validate_phone_number(mobile):
         return False, "Invalid mobile number. Must be exactly 10 digits."

@@ -1,15 +1,16 @@
-from django.shortcuts import render, HttpResponse, redirect
-from django.db.models import Sum, F, Func, Value
+from django.shortcuts import render, redirect
+from django.db.models import Sum, F, Value
 from django.db.models.functions import Coalesce, Lower, Replace
 from django.db.models import Q
 from django.http import JsonResponse
-from . utils import product_list
-from . models import *
-from users . models import *
-from users . views import *
-
+from .utils import product_list
+from .models import *
+from users.models import *
+from users.views import *
+from .validators import validate_product_data, validate_create_product_data, validate_category_data, validate_create_category_data, validate_size
 
 # Products and Category related
+
 
 def product_details(request, id):
     try:
@@ -233,66 +234,53 @@ def add_category(request):
         title = request.POST.get('title')
         active = 'active' in request.POST
         module_offer = request.POST.get('offer')
+        if not module_offer:
+            module_offer = None
+        validate, validation_error = validate_create_category_data(title, active, module_offer)
+        if validate:
+            try:
+                title = title.title()
+                category = Category(name=title, module_offer=module_offer, is_active=active)
+                category.save()
+                messages.success(request, 'Part 1 completed') 
+                return redirect(add_category_step2, category.id)
 
-        categories = Category.objects.annotate(lower_name = Lower(Replace('name', Value(' '), Value('')))).values_list('lower_name', flat=True)
-        category_check = (title.lower()).replace(" ", "")
-        
-        if category_check in categories:
-            messages.error(request, 'Category with similar title exists')
-            return redirect(add_category)
+            except IntegrityError:
+                messages.error(request, 'Category with same title exists')
+                return redirect(add_category)
 
-        try:
-            if not module_offer:
-                module_offer = None
-            title = title.title()
-            category = Category(name=title, module_offer=module_offer, is_active=active)
-            category.save()
-            messages.success(request, 'Part 1 completed') 
+            except:
+                messages.error(request, 'Oops something went wrong')
+                return redirect(add_category)
+        else:
+            messages.error(request, validation_error)
 
-        except IntegrityError:
-            messages.error(request, 'Category with same title exists')
-            return redirect(add_category)
-
-        except:
-            messages.error(request, 'Oops something went wrong')
-            return redirect(add_category)
-        
-        return redirect(add_category_step2, category.id)
-    
-    context = {
-
-    }
+    context = {}
     return render(request, 'admin_page/add_category.html', context)
 
 @login_required(login_url='admin_login')
 @user_passes_test(is_admin, login_url='/permission-denied/')
 def add_category_step2(request, category_id):
     category = Category.objects.get(id=category_id)
+    sizes = category.sizes.all()
+    sizes_names_list = sizes.values('id', 'name')
     if request.method == 'POST':
         size_name  = request.POST.get('size')
-        sizes = category.sizes.all()
-        sizes_names_id = sizes.values('id', 'name')
-        sizes_names = sizes.annotate(lower_name=Lower(Replace('name', Value(' '), Value('')))).values_list('lower_name', flat=True)
-        size_name = (size_name.lower()).replace(" ", "")
-        if size_name in sizes_names:
-            return JsonResponse({'error': 'Similar Size is already added','sizes': list(sizes_names_id)}, status=400)
-
-        if len(size_name) > 2:
-            return JsonResponse({'error': 'Size can only contain 2 Characters','sizes': list(sizes_names_id)}, status=400)
-
         if size_name:
-            size_name = size_name.upper()
-            size = Size(name= size_name , category= category)
-            size.save()
-            return JsonResponse({'sizes': list(sizes_names_id)})
+            validate, validation_error = validate_size(size_name, sizes)
+            if validate:
+                size_name = size_name.upper()
+                size = Size(name=size_name, category=category)
+                size.save()
+                return JsonResponse({'sizes': list(sizes_names_list)})
+            else:
+                return JsonResponse({'error': validation_error,'sizes': list(sizes_names_list)}, status=400)
         else:
-            return JsonResponse({'error': 'Input is empty','sizes': list(sizes_names_id)}, status=400)
+            return JsonResponse({'error': 'Input is empty','sizes': list(sizes_names_list)}, status=400)
 
-    sizes = category.sizes.all().values('id', 'name')
-    category_name = category.name
     context = {
         'category': category,
-        'sizes' : sizes
+        'sizes' : sizes_names_list
     }
     return render(request, 'admin_page/add_category2.html', context)
 
@@ -306,45 +294,35 @@ def update_category(request, category_id):
         title = request.POST.get('title')
         active = 'active' in request.POST
         module_offer = request.POST.get('offer')
-
-        categories = Category.objects.exclude(id=category_id).annotate(lower_name = Lower(Replace('name', Value(' '), Value('')))).values_list('lower_name', flat=True)    
-        category_check = (title.lower()).replace(" ", "")
-        
-        if category_check in categories:
-            messages.error(request, 'Category with similar title exists')
-            return redirect(update_category, category_id)
-
         try:
-            changes_detected = False
+            to_update = {}
             if category.name != title and title != None:
                 category.name = title = title.title()
-                changes_detected = True
-
+                to_update["name"] = title
+                
             if category.is_active != active and active != None:
                 category.is_active = active
-                changes_detected = True
-            
-            if module_offer and category.module_offer != module_offer and module_offer != None:
+                to_update["is_active"] = active
+
+            if module_offer is not None and category.module_offer != float(module_offer):
                 category.module_offer = module_offer
-                changes_detected = True
+                to_update["module_offer"] = module_offer
 
-            if changes_detected:
-                category.save()
-                messages.success(request, 'updated successfully')
-
+            validate, validation_error = validate_category_data(**to_update)
+            if validate:
+                if len(to_update):
+                    category.save()
+                    messages.success(request, 'updated successfully')
+                else:
+                    messages.info(request, 'No Updations')
+                return redirect(update_category_step2, category_id)
             else:
-                messages.info(request, 'No Updations')
-
+                messages.error(request, validation_error)
         except:
             messages.error(request, 'Oops something went wrong')
-            return redirect(update_category)
+            return redirect(update_category, category_id)
 
-
-        return redirect(update_category_step2, category_id)
-
-    context = {
-        'category' : category,
-    }
+    context = {'category' : category}
     return render(request, 'admin_page/update_category.html', context)
 
 
@@ -384,32 +362,23 @@ def add_product(request):
         gender = request.POST.get('gender')
         brand = request.POST.get('brand')
         max_purchase_qty = request.POST.get('max_purchase_qty')
-        try:
-            original_price = int(original_price)
-            selling_price = int(selling_price)
-            max_purchase_qty = int(max_purchase_qty)
-        except:
-            messages.error(request, 'Oops something went wrong.... Kindly try again.')
-            return redirect(add_product)
 
-        if selling_price > original_price:
-            messages.error(request, 'Orginal Price should be greater than or equal to Selling Price')
-            return redirect(add_product)
+        validated, validation_error = validate_create_product_data(title, description, category_name, original_price, selling_price, gender, brand, max_purchase_qty)
+        if validated:
+            try:
+                category = Category.objects.get(name=category_name)
+                seller = User.objects.get(username=(request.user.username))
+                product = Product.objects.create(title=title, description=description, category=category, original_price=float(original_price), selling_price=float(selling_price), \
+                                                gender=gender, brand=brand, created_by=seller, max_purchase_qty=int(max_purchase_qty), stage='stage1')
+
+            except:
+                messages.error(request, 'Oops something went wrong 2')
+                return redirect(add_product) 
         
-        if max_purchase_qty and (max_purchase_qty > 10 or max_purchase_qty < 1):
-            messages.error(request, 'Max purchase quantity should be within 0 and 10')
-            return redirect(add_product)
+        else:
+            messages.error(request, validation_error)
+            return redirect(add_product) 
 
-        try:
-            category = Category.objects.get(name=category_name)
-            seller = User.objects.get(username=(request.user.username))
-            product = Product.objects.create(title=title, description=description, category=category, original_price=original_price, selling_price=selling_price, \
-                                             gender=gender, brand=brand, created_by= seller,max_purchase_qty = max_purchase_qty, stage = 'stage1')
-
-        except:
-            messages.error(request, 'Oops something went wrong')
-            return redirect(product_management) 
-        
         product.save()
         return redirect(add_product_step2,product_id=product.id)
     
@@ -471,10 +440,8 @@ def add_product_step3(request, product_id):
     variants = product.variants.all()
 
     if request.method == 'POST':
-        
         for variant in variants:
-            
-            quantity = request.POST.get(str(variant.id))
+            quantity = request.POST.get(str(variant.id), 0)
             if quantity:
                 variant.quantity = int(quantity)
             else:
@@ -521,51 +488,61 @@ def update_product(request, product_id):
         gender = request.POST.get('gender')
         max_purchase_qty = request.POST.get('max_purchase_qty')
         
-        try:
-            original_price = int(original_price)
-            selling_price = int(selling_price)
-            max_purchase_qty = int(max_purchase_qty)
-        except:
-            messages.error(request, 'Oops something went wrong.... Kindly try again.')
-            return redirect(update_product, product_id)
+        # try:
+        #     original_price = int(original_price)
+        #     selling_price = int(selling_price)
+        #     max_purchase_qty = int(max_purchase_qty)
+        # except:
+        #     messages.error(request, 'Oops something went wrong.... Kindly try again.')
+        #     return redirect(update_product, product_id)
 
-        if selling_price > original_price:
-            messages.error(request, 'Orginal Price should be greater than Selling Price')
-            return redirect(update_product, product_id)
+        # if selling_price > original_price:
+        #     messages.error(request, 'Orginal Price should be greater than Selling Price')
+        #     return redirect(update_product, product_id)
 
-        if max_purchase_qty and (max_purchase_qty > 10 or max_purchase_qty < 1):
-            messages.error(request, 'Max purchase quantity should be within 0 and 10')
-            return redirect(update_product, product_id)
+        # if max_purchase_qty and (max_purchase_qty > 10 or max_purchase_qty < 1):
+        #     messages.error(request, 'Max purchase quantity should be within 0 and 10')
+        #     return redirect(update_product, product_id)
 
-        changes_detected = False
-        if product.title != title and title != None:
+        to_update = {}
+        if title and product.title != title:
             product.title = title
-            changes_detected = True
+            to_update["title"] = title
 
-        if product.description != description and description != None:
+        if description and product.description != description:
             product.description = description
-            changes_detected = True
-        
-        if product.selling_price != float(selling_price) and selling_price != None:
-            product.selling_price = float(selling_price)
-            changes_detected = True
-        
-        if product.original_price != float(original_price) and original_price != None:
+            to_update["description"] = description
+                
+        if original_price and product.original_price != float(original_price):
             product.original_price = float(original_price)
-            changes_detected = True
+            to_update["original_price"] = original_price
         
-        if product.gender != gender and gender != None:
+        if selling_price and product.selling_price != float(selling_price):
+            product.selling_price = float(selling_price)
+            to_update["selling_price"] = selling_price
+
+        if gender and product.gender != gender:
             product.gender = gender
-            changes_detected = True
+            to_update["gender"] = gender
         
-        if product.max_purchase_qty != int(max_purchase_qty) and max_purchase_qty != None and max_purchase_qty:
-            product.max_purchase_qty = max_purchase_qty
-            changes_detected = True
+        if max_purchase_qty and product.max_purchase_qty != int(max_purchase_qty):
+            product.max_purchase_qty = int(max_purchase_qty)
+            to_update["max_purchase_qty"] = max_purchase_qty
 
-        if changes_detected:
-            product.save()
+        if to_update.get("original_price") and not to_update.get("selling_price"):
+            to_update["selling_price"] = product.selling_price
 
-        return redirect(update_product_step2, product_id)
+        if to_update.get("selling_price") and not to_update.get("original_price"):
+            to_update["original_price"] = product.original_price
+        print('to update:', to_update)
+        validated, validation_error = validate_product_data(**to_update)
+        if validated:
+            if len(to_update):
+                product.save()
+
+            return redirect(update_product_step2, product_id)
+        else:
+            messages.error(request, validation_error)
         
     context = {
         'product': product,
@@ -628,13 +605,19 @@ def update_product_step3(request, product_id):
 
     if request.method == 'POST':
         for variant in variants:
-            quantity = request.POST.get(str(variant.id))
+            quantity = request.POST.get(str(variant.id), 0)
+            if not quantity:
+                quantity = 0
 
-            if quantity != None and quantity != '' and variant.quantity != int(quantity) and not int(quantity) < 0:
+            if int(quantity) < 0:
+                messages.error(request, "quantity shouldn't be negative")
+                break
+
+            if quantity != None and quantity != '' and variant.quantity != int(quantity):
                 variant.quantity = int(quantity)
                 variant.save()
-
-        return redirect(product_management)
+        else:
+            return redirect(product_management)
 
     context = {
         'product_id' : id,
