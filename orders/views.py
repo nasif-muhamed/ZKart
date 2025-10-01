@@ -2,7 +2,7 @@ import os
 import json
 from django.shortcuts import render, redirect
 from django.db.models import F, ExpressionWrapper, DateTimeField
-from django.db.models.functions import Lower
+from django.db.models.functions import Upper
 from django.http import JsonResponse
 from django.utils import timezone
 from django.contrib.auth.decorators import login_required
@@ -16,6 +16,7 @@ from users.views import *
 from users.utils import send_mail
 from products.models import *
 from products.views import *
+from .validators import validate_create_coupon_data, validate_coupon_data
 
 coords_str = os.getenv("SELLER_HUB_COORDINATES", "9.9312,76.2673")  # Kochi
 SELLER_HUB_COORDINATES = tuple(map(float, coords_str.split(",")))
@@ -708,21 +709,19 @@ def admin_coupon_management(request):
 @user_passes_test(is_admin, login_url='/permission-denied/')
 def add_coupon(request):
     if request.method == 'POST':
-        coupon_code = request.POST.get('coupon_code')
+        coupon_code = request.POST.get('coupon_code', '')
         description = request.POST.get('description')
         minimum_amount = request.POST.get('minimum_amount')
         type = request.POST.get('type')
         discount = request.POST.get('discount')
 
-        coupons = Coupon.objects.annotate(lower_name=Lower(Replace('coupon_code', Value(' '), Value('')))).values_list('lower_name', flat=True)
-        coupon_check = (coupon_code.lower()).replace(" ", "")
-        if coupon_check in coupons:
-            messages.error(request, 'Coupon with similar Coupon Code exists')
+        normalized_code = (coupon_code.upper()).replace(" ", "")
+        validate, error = validate_create_coupon_data(normalized_code, description, minimum_amount, type, discount)
+        if not validate:
+            messages.error(request, error)
             return redirect(add_coupon)
-
         try:
-            coupon_code=(coupon_code.upper()).replace(" ", "")
-            Coupon.objects.create(coupon_code=coupon_code, description=description, minimum_amount=minimum_amount, type = type, discount = discount)
+            Coupon.objects.create(coupon_code=normalized_code, description=description, minimum_amount=float(minimum_amount), type = type, discount=discount)
             messages.success(request, 'Product Addedd Successfully')
         
         except IntegrityError:
@@ -737,6 +736,7 @@ def add_coupon(request):
     
     return render(request, 'admin_page/coupon_management/admin_add_coupon.html')
 
+
 @login_required(login_url='admin_login')
 @user_passes_test(is_admin, login_url='/permission-denied/')
 def update_coupon(request, coupon_id):
@@ -750,40 +750,57 @@ def update_coupon(request, coupon_id):
         discount = request.POST.get('discount')
         is_expired = 'is_expired' in request.POST
 
-        coupons = Coupon.objects.exclude(id=coupon_id).annotate(lower_name=Lower(Replace('coupon_code', Value(' '), Value('')))).values_list('lower_name', flat=True)
-        coupon_check = (coupon_code.lower()).replace(" ", "")
-        if coupon_check in coupons:
-            messages.error(request, 'Coupon with similar Coupon Code exists')
-            return redirect(update_coupon, coupon_id)
+        normalized_code = (coupon_code.upper()).replace(" ", "")
+        # if coupon_code in coupons:
+        #     messages.error(request, 'Coupon with similar Coupon Code exists')
+        #     return redirect(update_coupon, coupon_id)
 
         try:
-            change = False
-            if coupon_code and coupon_code != coupon.coupon_code and coupon_code is not None:
-                coupon_code=(coupon_code.upper()).replace(" ", "")
-                coupon.coupon_code = coupon_code
-                change = True
+            to_update = {}
+            if normalized_code and normalized_code != coupon.coupon_code:
+                coupon.coupon_code = normalized_code
+                to_update["coupon_code"] = normalized_code
             
             if description and description != coupon.description and description is not None:
                 coupon.description = description
-                change = True
+                to_update["description"] = description
 
             if minimum_amount and float(minimum_amount) != coupon.minimum_amount and minimum_amount is not None:
                 coupon.minimum_amount = minimum_amount
-                change = True
+                to_update["minimum_amount"] = minimum_amount
             
             if type and type != coupon.type and type is not None:
                 coupon.type = type
-                change = True
+                to_update["type"] = type
 
             if discount and int(discount) != coupon.discount and discount is not None:
                 coupon.discount = int(discount)
-                change = True
+                to_update["discount"] = discount
 
             if is_expired != coupon.is_expired and is_expired is not None:
                 coupon.is_expired = is_expired
-                change = True
             
-            if change:
+            if discount or minimum_amount or type:
+                print('1')
+                if not minimum_amount or float(minimum_amount) == coupon.minimum_amount:
+                    print('1')
+                    to_update["minimum_amount"] = coupon.minimum_amount
+
+                if not discount or int(discount) == coupon.discount:
+                    print('1')
+                    to_update["discount"] = coupon.discount
+
+                if not type or type == coupon.type:
+                    print('1')
+                    to_update["type"] = coupon.type
+
+            print('to_update', to_update)
+            validate, error = validate_coupon_data(**to_update)
+            if not validate:
+                messages.error(request, error)
+                return redirect(update_coupon, coupon_id)
+
+            if len(to_update):
                 coupon.save()
                 messages.success(request, 'Coupon Updated Successfully')
             else:
