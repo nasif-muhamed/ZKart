@@ -12,6 +12,7 @@ from django.db.models import Q, Count, Case, When
 from django.core.exceptions import ValidationError
 from django.http import JsonResponse
 from django.db.models.functions import Coalesce
+from django.contrib.sites.models import Site
 from .validators import validate_register_data, is_password_valid, validate_profile_data, validate_address_data, validate_address_creation
 from .models import *
 from .utils import send_mail
@@ -247,10 +248,11 @@ def register_page(request):
                 new_account.save()
                 new_account.wallet.save()
 
-            current_site = os.getenv('CURRENT_DOMAIN')
+            current_site = Site.objects.get_current()
+            domain = current_site.domain
             mail_subject = 'Activate your account'
             mail_message = render_to_string('emailer/account_activation_email.html', {'user': user,
-                                                                                     'domain' : current_site,
+                                                                                     'domain' : domain,
                                                                                      'uid' : urlsafe_base64_encode(force_bytes(user.pk)),
                                                                                      'token' : account_activation_token.make_token(user)})
             
