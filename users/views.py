@@ -320,10 +320,10 @@ def user_wishlist(request):
     account = request.user.account
     wishlist = account.wishlists.all()
     
-    if request.method == 'POST' and 'remove_btn' in request.POST:
+    if request.method == 'POST' and 'item_id' in request.POST:
         item_id = request.POST.get('item_id')
         wishlist.get(id=item_id).delete()
-        return redirect(user_wishlist)
+        return redirect('wishlist')
 
     context = {
         'account' : account,

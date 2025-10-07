@@ -54,7 +54,7 @@
                             <span class="original-price">₹ {{item.product.original_price|floatformat:0}}</span>
                         </div>
                         <div class="col-md-2">
-                            <form action="" method="post">
+                            <form class="remove-form" method="post">
                                 {% csrf_token %}
                                 <input type="text" name="item_id" id="item_id" value="{{item.id}}" hidden>
                                 <button type="submit" name="remove_btn" class="btn btn-danger">Remove</button>                                
@@ -70,5 +70,31 @@
 {% endblock main_body %}
 
 {% block scripts_profile %}
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const removeForms = document.querySelectorAll('.remove-form');
+    
+    removeForms.forEach(form => {
+        form.addEventListener('submit', function(e) {
+            e.preventDefault();
+            Swal.fire({
+                title: 'Remove from Wishlist?',
+                text: 'Are you sure you want to remove this product from your wishlist?',
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#d33',
+                cancelButtonColor: '#3085d6',
+                confirmButtonText: 'Yes, remove it!',
+                cancelButtonText: 'Cancel'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    form.submit();
+                }
+            });
+        });
+    });
+});
+</script>
 {% endblock scripts_profile %}
