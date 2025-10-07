@@ -41,6 +41,13 @@ class Coupon(models.Model):
     class Meta:
         ordering = ['is_expired','-created_at']
 
+    def offer_message(self):
+        if self.type == 'percentage':
+            return f"{self.discount}% discount on  ₹{int(self.minimum_amount)} purchase"
+        elif self.type == 'amount':
+            return f" ₹{int(self.discount)} deduction on  ₹{int(self.minimum_amount)} purchase"
+        return ""
+
 
 class Order(models.Model):
     CUSTOMER_CHOICES = (

@@ -152,8 +152,8 @@
               <ul>
                 {% for coupon in coupon_applicable %}
                 <li style="display: flex;">
-                  <small style="font-weight: 700;">{{coupon.coupon_code}}</small>
-                  <small style="margin-left: 1rem;">({{coupon.description}})</small>
+                  <small style="font-weight: 700;">{{coupon.coupon_code}}:</small>
+                  <small style="margin-left: 1rem;">{{coupon.offer_message}}</small>
                 </li>
                 {% endfor %}
               </ul>
