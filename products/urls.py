@@ -6,7 +6,6 @@ urlpatterns = [
     path('product/<id>/', views.product_details, name= 'product_details'),
     # path('banner_list/<id>/', views.banner_list, name= 'banner_list'), # to delete
     path('search_list/', views.search_list, name= 'search_list'),
-    path('search_list/<search>/', views.search_list, name= 'search_list'),
 
     
     # admin side

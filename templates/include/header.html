@@ -55,24 +55,23 @@
       <div class="header-navigation">
         <ul>
           <li >
-            <a class="dropdown-toggle"  href="{% url 'search_list' 'men' %}">
+            <a href="{% url 'search_list' %}?search=&gender=M">
               Men
             </a>
           </li>
 
           <li >
-            <a class="dropdown-toggle"  href="{% url 'search_list' 'women' %}">
+            <a  href="{% url 'search_list' %}?search=&gender=F">
               Women
             </a>
           </li>
-          <li><a href="{% url 'search_list' 'unisex' %}">Kids</a></li>
-          <li class="dropdown dropdown100 nav-catalogue">
-            <a class="dropdown-toggle"  href="{% url 'search_list' 'latest' %}">
+          <li class=" dropdown100 ">
+            <a  href="{% url 'search_list' %}?search=&sort=latest">
               New
             </a>
           </li>
           <li >
-            <a class="dropdown-toggle"  href="{% url 'search_list' %}?search=&sort=popular">
+            <a href="{% url 'search_list' %}?search=&sort=popular">
               Trending 
             </a>
           </li>

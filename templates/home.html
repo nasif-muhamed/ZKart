@@ -133,15 +133,15 @@
         <strong>Gender</strong>
           <ul class="list-group margin-bottom-25 sidebar-menu">
             
-            <li class="list-group-item clearfix"><a href="{% url 'search_list' 'men' %}"><i class="fa fa-angle-right"></i> Men </a></li>
-            <li class="list-group-item clearfix"><a href="{% url 'search_list' 'women' %}"><i class="fa fa-angle-right"></i> Women </a></li>
+            <li class="list-group-item clearfix"><a href="{% url 'search_list' %}?search=&gender=M"><i class="fa fa-angle-right"></i> Men </a></li>
+            <li class="list-group-item clearfix"><a href="{% url 'search_list' %}?search=&gender=F"><i class="fa fa-angle-right"></i> Women </a></li>
             
           </ul>
 
           <strong>Categories</strong>
           <ul class="list-group margin-bottom-25 sidebar-menu">
-            {% for category in categories %}
-            <li class="list-group-item clearfix"><a href="{% url 'search_list' category %}"><i class="fa fa-angle-right"></i> {{category}} </a></li>
+            {% for category_id, category_name in categories %}
+            <li class="list-group-item clearfix"><a href="{% url 'search_list' %}?search=&category={{ category_id }}"><i class="fa fa-angle-right"></i> {{category_name}} </a></li>
             {% endfor %}
           </ul>
 
@@ -195,7 +195,7 @@
   <div class="container">
     <div class="owl-carousel owl-carousel6-brands">
       {% for brand in brands %}
-      <a href="{% url 'search_list' brand %}"><span style="font-size: 25px; text-decoration: none; color: black;">{{brand}}</span></a>
+      <a href="{% url 'search_list' %}?search=&brand={{brand}}"><span style="font-size: 25px; text-decoration: none; color: black;">{{brand}}</span></a>
       {% endfor %}
     </div>
   </div>

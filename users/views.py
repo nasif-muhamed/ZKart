@@ -298,7 +298,7 @@ def user_home(request):
                 .order_by('-total_stock_ordered')
     brands = products.values_list('brand', flat=True)
     banners = Banner.objects.all()[:5]
-    categories = Category.objects.filter(is_active = True).values_list('name', flat=True)
+    categories = Category.objects.filter(is_active = True).values_list('id', 'name')[:5]
 
     user_wishlist = []
     if request.user.is_authenticated:

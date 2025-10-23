@@ -134,7 +134,7 @@ const csrftoken = getCookie('csrftoken');
     <div class="container">
       <ul class="breadcrumb">
           <li><a href="{% url 'home' %}">Home</a></li>
-          <li><a href="{% url 'search_list' product.category %}">{{product.category}}</a></li>
+          <li><a href="{% url 'search_list' %}?search=&category={{ product.category.id }}">{{product.category}}</a></li>
           <li class="active">{{product.title}}</li>
       </ul>
       <!-- BEGIN SIDEBAR & CONTENT -->
@@ -145,22 +145,22 @@ const csrftoken = getCookie('csrftoken');
           <strong>Gender</strong>
           <ul class="list-group margin-bottom-25 sidebar-menu">
             
-            <li class="list-group-item clearfix"><a href="{% url 'search_list' 'men' %}"><i class="fa fa-angle-right"></i> Men </a></li>
-            <li class="list-group-item clearfix"><a href="{% url 'search_list' 'women' %}"><i class="fa fa-angle-right"></i> Women </a></li>
+            <li class="list-group-item clearfix"><a href="{% url 'search_list' %}?search=&gender=M"><i class="fa fa-angle-right"></i> Men </a></li>
+            <li class="list-group-item clearfix"><a href="{% url 'search_list' %}?search=&gender=F"><i class="fa fa-angle-right"></i> Women </a></li>
             
           </ul>
 
           <strong>Categories</strong>
           <ul class="list-group margin-bottom-25 sidebar-menu">
-            {% for category in categories %}
-            <li class="list-group-item clearfix"><a href="{% url 'search_list' category %}"><i class="fa fa-angle-right"></i> {{category}} </a></li>
+            {% for cat_id, cat_name in categories %}
+            <li class="list-group-item clearfix"><a href="{% url 'search_list' %}?search=&category={{ cat_id }}"><i class="fa fa-angle-right"></i> {{cat_name}} </a></li>
             {% endfor %}
           </ul>
 
           <strong>Brands</strong>
           <ul class="list-group margin-bottom-25 sidebar-menu">
             {% for brand in brands %}
-            <li class="list-group-item clearfix"><a href="{% url 'search_list' brand %}"><i class="fa fa-angle-right"></i> {{brand}} </a></li>
+            <li class="list-group-item clearfix"><a href="{% url 'search_list' %}?search=&brand={{brand}}"><i class="fa fa-angle-right"></i> {{brand}} </a></li>
             {% endfor %}
           </ul>
 

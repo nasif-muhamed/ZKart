@@ -20,7 +20,7 @@ def product_details(request, id):
         colors = variants.values('color__name', 'color__hex_code').distinct()
         sizes = variants.values_list('size__name', flat=True).distinct()
         related= products.filter(category=product.category).exclude(id=product.id)[:6]
-        categories= Category.objects.values_list('name', flat=True)
+        categories= Category.objects.values_list('id', 'name')
         brands = Product.objects.values_list('brand', flat=True)
         user_wishlist = []
         if request.user.is_authenticated:
@@ -72,21 +72,18 @@ def fliter_products(request):
     return show
 
 
-def search_list(request, search=''):
-    if not search and request.method == 'GET':
+def search_list(request):
+    if request.method == 'GET':
         search = request.GET.get('search')
         sort = request.GET.get('sort')
-        filtering = request.GET.get('filter')
 
+        product_obj = Product.objects.filter(is_active=True, category__is_active = True).prefetch_related('product_images')
         if search:
-            product_obj = Product.objects.filter(
+            product_obj = product_obj.filter(
                 Q(title__icontains=search) |
                 Q(category__name__icontains=search) |
                 Q(brand__icontains=search)
-            ).filter(is_active=True, category__is_active = True).prefetch_related('product_images')
-
-        else:
-            product_obj = Product.objects.filter(is_active=True, category__is_active = True).prefetch_related('product_images')
+            )
 
         category_ids_list = product_obj.values_list('category', flat=True)  # Includes duplicates
         categories= Category.objects.filter(is_active = True, id__in=set(category_ids_list))
@@ -97,36 +94,35 @@ def search_list(request, search=''):
             'brands' : set(brands),
         }
 
-        if 'form_submitted' in request.GET:
-            gender = request.GET.get('gender')
-            category_ids = request.GET.getlist('category')
-            brands_filter = request.GET.getlist('brand')
-            price_min = request.GET.get('price_min')
-            price_max = request.GET.get('price_max')
+        gender = request.GET.get('gender')
+        category_ids = request.GET.getlist('category')
+        brands_filter = request.GET.getlist('brand')
+        price_min = request.GET.get('price_min')
+        price_max = request.GET.get('price_max')
 
-            if gender:
-                product_obj = product_obj.filter(gender = gender)
+        if gender:
+            product_obj = product_obj.filter(gender = gender)
 
-            if category_ids:
-                try:
-                    category_ids = list(map(int, category_ids))
-                except ValueError:
-                    category_ids = []
-                
-                product_obj = product_obj.filter(category_id__in = category_ids)
-
-            if brands_filter:
-                product_obj = product_obj.filter(brand__in = brands_filter)
-
+        if category_ids:
             try:
-                if price_min is not None and price_min:
-                    product_obj = product_obj.filter(selling_price__gte = int(price_min))
+                category_ids = list(map(int, category_ids))
+            except ValueError:
+                category_ids = []
+            
+            product_obj = product_obj.filter(category_id__in = category_ids)
 
-                if price_max is not None and price_max:
-                    product_obj = product_obj.filter(selling_price__lte = int(price_max))
-            except:
-                price_min = None
-                price_max = None
+        if brands_filter:
+            product_obj = product_obj.filter(brand__in = brands_filter)
+
+        try:
+            if price_min is not None and price_min:
+                product_obj = product_obj.filter(selling_price__gte = int(price_min))
+
+            if price_max is not None and price_max:
+                product_obj = product_obj.filter(selling_price__lte = int(price_max))
+        except:
+            price_min = None
+            price_max = None
 
         if sort:
             if sort == 'a2z':
@@ -156,45 +152,6 @@ def search_list(request, search=''):
         context = {**show, **main_context}
         return render(request, 'product_list.html', context)
     
-    if search:
-        if search == 'all':
-            product_obj = Product.objects.filter(is_active=True, category__is_active = True).prefetch_related('product_images')
-
-        if search == 'men':
-            product_obj = Product.objects.filter(gender='M', is_active=True, category__is_active = True).prefetch_related('product_images')
-            
-        if search == 'women':
-            product_obj = Product.objects.filter(gender='F', is_active=True, category__is_active = True).prefetch_related('product_images')
-
-        if search == 'unisex':
-            product_obj = Product.objects.filter(gender='U', is_active=True, category__is_active = True).prefetch_related('product_images')
-
-        if search == 'trending':
-            product_obj = Product.objects.filter(trending=True, is_active=True, category__is_active = True).prefetch_related('product_images')
-
-        if search == 'latest':
-            product_obj = Product.objects.filter(is_active=True, category__is_active = True).prefetch_related('product_images')
-
-        category = Category.objects.filter(is_active = True).values_list('name',flat=True)
-        if search in category:
-            product_obj = Product.objects.filter(category__name= search)
-
-        brand = Product.objects.filter(is_active = True).values_list('brand',flat=True)
-        brand = set(brand)
-        if search in brand:
-            product_obj = Product.objects.filter(brand= search)
-
-        categories= Category.objects.filter(is_active = True, name__in=set(category))
-        main_context = {
-            'categories' : categories,
-            'brands' : set(brand),
-        }
-
-        show = product_list (request, product_obj)
-        context = {**show, **main_context}
-
-        return render(request, 'product_list.html', context)
-            
     return redirect(user_home)
 
 
