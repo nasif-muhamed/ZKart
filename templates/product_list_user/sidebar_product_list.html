@@ -57,25 +57,29 @@
       <input type="number" name="price_min" placeholder="Min" value="{{ request.GET.price_min }}" min="1">
       <input type="number" name="price_max" placeholder="Max" value="{{ request.GET.price_max }}" style="margin-top: .5rem;" min="1">
     </div>
-
-    {% comment %}
     <div class="sidebar-products clearfix">
-      <button class="btn btn-danger" type="submit" name="apply_filter">Apply Filters</button>
+      <button class="btn btn-success" type="submit" name="apply_filter">Apply Filters</button>
+      <button type="button" id="clear-filters" class="btn btn-danger">Clear Filters</button>
     </div>
-    {% endcomment %}
   </div>
 </form>
 <!-- END SIDEBAR -->
 
 <script>
   document.addEventListener('DOMContentLoaded', function() {
-    const filterForm = document.getElementById('filter-form');
-    const filterInputs = filterForm.querySelectorAll('input');
+  //   const filterForm = document.getElementById('filter-form');
+  //   const filterInputs = filterForm.querySelectorAll('input');
 
-    filterInputs.forEach(input => {
-        input.addEventListener('change', function() {
-            filterForm.submit();
-        });
+  //   filterInputs.forEach(input => {
+  //       input.addEventListener('change', function() {
+  //           filterForm.submit();
+  //       });
+  //   });
+    document.getElementById('clear-filters').addEventListener('click', function() {
+      const filterForm = document.getElementById('filter-form');
+      filterForm.querySelectorAll('input[type="radio"], input[type="checkbox"]').forEach(input => input.checked = false);
+      filterForm.querySelectorAll('input[type="number"]').forEach(input => input.value = '');
+      filterForm.submit();
     });
   });
 </script>
