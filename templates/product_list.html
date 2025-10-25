@@ -155,7 +155,9 @@
           {% endfor %}
           <!-- BEGIN PAGINATOR -->
           <div class="row">
-            <div class="col-md-4 col-sm-4 items-info">Items {{products.number}} of {{end}} total</div>
+            <!-- <div class="col-md-4 col-sm-4 items-info">Items {{products.number}} of {{end}} total</div> -->
+            <div class="col-md-4 col-sm-4 items-info">Page {{ products.number }} of {{ products.paginator.num_pages }} total</div>
+
             <div class="col-md-8 col-sm-8">
               <ul class="pagination pull-right">
                 <!--

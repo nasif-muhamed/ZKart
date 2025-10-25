@@ -6,16 +6,18 @@ register= template.Library()
 @register.filter(name='row_splitter')
 def row_splitter(array, limit):
     chunk = []
+    rows = []
     count = 0
     for data in array:
         chunk.append(data)
         count += 1
-        if count==limit:
-            yield chunk
-            i=0
-            chunk=[]
+        if count == limit:
+            rows.append(chunk)
+            chunk = []
+            count = 0
     if chunk:
-        yield chunk
+        rows.append(chunk)
+    return rows
 
 
 @register.filter(name='split_path') 
