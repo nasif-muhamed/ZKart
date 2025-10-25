@@ -1,5 +1,6 @@
 import os
 import json
+import logging
 from django.shortcuts import render, redirect
 from django.db.models import F, ExpressionWrapper, DateTimeField
 from django.db.models.functions import Upper
@@ -17,6 +18,8 @@ from users.utils import send_mail
 from products.models import *
 from products.views import *
 from .validators import validate_create_coupon_data, validate_coupon_data
+
+logger = logging.getLogger(__name__)
 
 coords_str = os.getenv("SELLER_HUB_COORDINATES", "9.9312,76.2673")  # Kochi
 SELLER_HUB_COORDINATES = tuple(map(float, coords_str.split(",")))
@@ -92,12 +95,15 @@ def add_to_cart(request):
 
     variant = ProductVariant.objects.get(id = variant_id)
     customer = request.user.account
+    logger.info(f"Add to cart attempt: {variant.product.title} (variant: {variant_id}, qty: {quantity}) by {customer.user.username}")
 
     max_quantity = variant.product.max_purchase_qty
     if quantity > max_quantity:
+        logger.warning(f"Add to cart failed - quantity exceeds max purchase limit: {quantity} > {max_quantity}")
         messages.error(request, f'A person can only purchase this product upto {max_quantity} quantity')
 
     elif quantity > variant.quantity:
+        logger.warning(f"Add to cart failed - insufficient stock: {quantity} > {variant.quantity}")
         messages.error(request, 'Insufficient Stock')
 
     else:
@@ -110,12 +116,15 @@ def add_to_cart(request):
             messages.success(request, 'Product added to cart successfully')
             order_item.save()
             add_success = True
+            logger.info(f"Product added to cart successfully: {variant.product.title}")
 
         else:
             if (order_item.quantity + quantity) > max_quantity:
+                logger.warning(f"Cart update failed - quantity exceeds max purchase limit: {order_item.quantity + quantity} > {max_quantity}")
                 messages.error(request, f'A person can only purchase this product upto {max_quantity} quantities')
 
             elif (order_item.quantity + quantity) > variant.quantity:
+                logger.warning(f"Cart update failed - insufficient stock: {order_item.quantity + quantity} > {variant.quantity}")
                 messages.error(request, 'Insufficient Stock')
 
             else:
@@ -123,6 +132,7 @@ def add_to_cart(request):
                 messages.success(request, 'Product on cart is updated')
                 order_item.save()
                 add_success = True
+                logger.info(f"Cart updated successfully: {variant.product.title}")
 
         if add_success:
             if 'coupon_discount' in request.session:
@@ -194,7 +204,10 @@ def checkout_page(request):
 
     try:
         customer = request.user.account
+        logger.info(f"Checkout page accessed by: {customer.user.username}")
+        
         if not customer.is_completed():
+            logger.warning(f"Checkout failed - incomplete profile for user: {customer.user.username}")
             messages.error(request, 'Complete your profile prior to Checkout')
             return redirect(cart_view)
 
@@ -206,6 +219,7 @@ def checkout_page(request):
         order, created = Order.objects.get_or_create(customer=customer, status='cart')
         orders = order.order_items.all()
     except Exception as e:
+        logger.error(f"Checkout page error: {str(e)}")
         messages.error(request, 'Something went wrong')
         return redirect(checkout_page)
 
@@ -248,6 +262,7 @@ def checkout_page(request):
                         if delivery_charge == 'Free':
                             delivery_charge = 0
                         elif delivery_charge == 'None':
+                            logger.warning(f"Invalid address for checkout: {selected_address_id}")
                             messages.error(request, 'Invalid Address')
                             return redirect(cart_view)
                         
@@ -270,6 +285,7 @@ def checkout_page(request):
                             order.order_identifier = generate_unique_order_id(customer.id)
                             
                         order.save()
+                        logger.info(f"Order placed successfully: {order.order_identifier} by {customer.user.username} via {selected_payment_method}")
 
                         for order_item in orders:
                             if selected_payment_method == 'razorpay' and payment_failed == 'true':
@@ -321,6 +337,7 @@ def checkout_page(request):
                         return redirect(checkout_page)
 
             except Exception as e:
+                logger.error(f"Order placement failed: {str(e)}")
                 messages.error(request, 'Something went wrong while ordering. Contact customer care if amount debited')
                 return redirect(checkout_page)
 
@@ -545,6 +562,8 @@ def user_order_cancel(request, order_item_id):
     try:
         order_item = OrderItem.objects.get(id=int(order_item_id))
         order = order_item.order
+        logger.info(f"Order cancellation requested: {order_item.product_variant.product.title} by {request.user.username}")
+        
         with transaction.atomic():
             order_item.status = 'cancelled'
             order_item.completed_date = timezone.now()
@@ -555,6 +574,7 @@ def user_order_cancel(request, order_item_id):
                 wallet.deposit((order_item.selling_price*order_item.quantity)-order_item.coupon_discount)
                 order_item.payment_status = 'wallet'
                 wallet.save()
+                logger.info(f"Refund processed for cancelled order item: {order_item.id}")
             else:
                 order_item.payment_status = 'cancelled'
 
@@ -575,8 +595,10 @@ def user_order_cancel(request, order_item_id):
                 send_mail(email, mail_subject, mail_message)
                 
             transaction.on_commit(send_cancel_email)
+            logger.info(f"Order item cancelled successfully: {order_item.id}")
 
     except Exception as e:
+        logger.error(f"Order cancellation failed: {str(e)}")
         print('exception:', e)
         messages.error(request, 'Something went wrong. Cancellation failed. Contact customer care')
     return redirect(user_order_details, order.id)
@@ -659,6 +681,7 @@ def update_order_status(request, order_item_id):
         status = request.POST.get('status')
         order_item.status = status
         order = order_item.order
+        logger.info(f"Order status updated by admin {request.user.username}: {order_item.product_variant.product.title} -> {status}")
         
         if status == 'delivered' or status == 'cancelled':
             order_item.completed_date = timezone.now()
@@ -666,6 +689,7 @@ def update_order_status(request, order_item_id):
 
             if status == 'delivered':
                 order_item.payment_status = 'success'
+                logger.info(f"Order item delivered: {order_item.id}")
 
             else:
                 order_item.product_variant.quantity += order_item.quantity
@@ -673,6 +697,7 @@ def update_order_status(request, order_item_id):
                     wallet = order_item.order.customer.wallet
                     wallet.deposit((order_item.selling_price*order_item.quantity)-order_item.coupon_discount)
                     order_item.payment_status = 'wallet'
+                    logger.info(f"Refund processed for cancelled order item: {order_item.id}")
                 else:
                     order_item.payment_status = 'cancelled'
 
@@ -683,6 +708,7 @@ def update_order_status(request, order_item_id):
                 order.complete_date = timezone.now()
                 order.status = 'completed'
                 order.save()
+                logger.info(f"Order completed: {order.id}")
 
         order_item.save()
         return redirect(order_item_management, order.id)

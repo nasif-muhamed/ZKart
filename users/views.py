@@ -1,4 +1,5 @@
 import os
+import logging
 from django.shortcuts import render, redirect, HttpResponse
 from django.contrib.auth.models import User
 from django.contrib.auth import authenticate, login, logout
@@ -18,6 +19,8 @@ from .models import *
 from .utils import send_mail
 from products.models import *
 from orders.models import *
+
+logger = logging.getLogger(__name__)
 
 
 def user_redirect(request):
@@ -47,17 +50,21 @@ def login_page(request):
     if request.method=='POST':
         username = request.POST.get('username')
         password = request.POST.get('password')
+        logger.info(f"Login attempt for username: {username}")
         user = authenticate(request, username=username, password=password)
 
         if user is not None and not user.is_staff:
             login(request, user)
+            logger.info(f"Successful login for user: {username}")
             return redirect(user_home)
         
         else:
             if Account.objects.filter(user__is_staff= False, user__username= username).exists():
+                logger.warning(f"Failed login attempt - incorrect password for user: {username}")
                 messages.error(request, 'password is not correct')
 
             else:
+                logger.warning(f"Failed login attempt - user does not exist: {username}")
                 messages.error(request, 'user does not exist')
 
             return render(request, 'signin.html', context)
@@ -68,8 +75,10 @@ def forgot_password(request):
     context = {}
     if request.method=='POST':
         email = request.POST.get('email')
+        logger.info(f"Password reset requested for email: {email}")
 
         if not User.objects.filter(email=email, is_active=True).exists():
+            logger.warning(f"Password reset failed - no active account for email: {email}")
             messages.error(request, 'No active account found with this email.')
             return redirect(forgot_password)
         
@@ -90,6 +99,7 @@ def send_otp(request, email):
         mail_subject = 'Forgot Password OTP'
         mail_message = render_to_string('emailer/forgot_otp.html', { 'otp': otp })
         send_mail(email, mail_subject, mail_message)
+        logger.info(f"OTP sent successfully to email: {email}")
         messages.success(request, "Please check your email for OTP. You have one minute to verify OTP")
 
         request.session['otp_email'] = email
@@ -98,7 +108,8 @@ def send_otp(request, email):
         request.session['valid_until'] = str(valid_until)
         return redirect(submit_otp)
 
-    except:
+    except Exception as e:
+        logger.error(f"Failed to send OTP to {email}: {str(e)}")
         messages.error(request, "Something went wrong while sending OTP.")
         return redirect(forgot_password)
 
@@ -227,6 +238,7 @@ def register_page(request):
         pass1= request.POST.get('password')
         pass2= request.POST.get('repassword')
         referral= request.POST.get('referral')
+        logger.info(f"Registration attempt for username: {username}, email: {email}")
 
         validated, error = validate_register_data(username, email, pass1, pass2, referral)
         if validated:
@@ -247,6 +259,7 @@ def register_page(request):
                 new_account.wallet.balance += 100
                 new_account.save()
                 new_account.wallet.save()
+                logger.info(f"Referral bonus applied for user: {username}")
 
             current_site = Site.objects.get_current()
             domain = current_site.domain
@@ -257,10 +270,12 @@ def register_page(request):
                                                                                      'token' : account_activation_token.make_token(user)})
             
             send_mail(email, mail_subject, mail_message)
+            logger.info(f"User registered successfully: {username}")
             messages.success(request, "Please check your email to complete the registration.")
             return redirect(login_page)
         
         else:
+            logger.warning(f"Registration failed for {username}: {error}")
             if error == 'pass_error':
                 context['pass_error'] = True
             else:
@@ -281,11 +296,12 @@ def activate(request, uidb64, token):
     if user is not None and account_activation_token.check_token(user, token):
         user.is_active = True
         user.save()
-
+        logger.info(f"Account activated successfully for user: {user.username}")
         messages.success(request, "Your account has been successfully activated")
         return redirect(login_page)
     
     else: 
+        logger.warning(f"Account activation failed - invalid or expired token for uid: {uidb64}")
         messages.error(request, "Activation link is invalid or expired.")
         return redirect(login_page)
 
@@ -876,10 +892,12 @@ def user_action(request, user_id, action):
     if action == 'delete':
         user.is_active = False
         user.save()
+        logger.info(f"User deactivated by admin: {user.username}")
 
     elif action == 'active':
         user.is_active = True
         user.save()
+        logger.info(f"User activated by admin: {user.username}")
     
     costomer.save()
     return redirect(user_management)

@@ -1,3 +1,4 @@
+import logging
 from django.shortcuts import render, redirect
 from django.db.models import Sum, F, Value
 from django.db.models.functions import Coalesce, Lower, Replace
@@ -9,6 +10,8 @@ from users.models import *
 from users.views import *
 from .validators import validate_product_data, validate_create_product_data, validate_category_data, validate_create_category_data, validate_size
 
+logger = logging.getLogger(__name__)
+
 # Products and Category related
 
 
@@ -16,6 +19,7 @@ def product_details(request, id):
     try:
         products = Product.objects.filter(is_active=True, category__is_active = True, stage = 'stage3').prefetch_related('product_images')
         product = products.get(id=id)
+        logger.info(f"Product details viewed: {product.title} (ID: {id})")
         variants = product.variants.all()
         colors = variants.values('color__name', 'color__hex_code').distinct()
         sizes = variants.values_list('size__name', flat=True).distinct()
@@ -37,7 +41,8 @@ def product_details(request, id):
             'user_wishlist' : user_wishlist,
         }
         return render(request, 'product_details.html', context)
-    except:
+    except Exception as e:
+        logger.warning(f"Product details view failed for ID {id}: {str(e)}")
         # messages.error(request, 'Product does not exist')
         return redirect(user_home)
 
@@ -76,6 +81,7 @@ def search_list(request):
     if request.method == 'GET':
         search = request.GET.get('search')
         sort = request.GET.get('sort')
+        logger.info(f"Product search performed: search='{search}', sort='{sort}'")
 
         product_obj = Product.objects.filter(is_active=True, category__is_active = True).prefetch_related('product_images')
         if search:
@@ -319,6 +325,7 @@ def add_product(request):
         gender = request.POST.get('gender')
         brand = request.POST.get('brand')
         max_purchase_qty = request.POST.get('max_purchase_qty')
+        logger.info(f"Product creation attempt: {title} by {request.user.username}")
 
         validated, validation_error = validate_create_product_data(title, description, category_name, original_price, selling_price, gender, brand, max_purchase_qty)
         if validated:
@@ -328,15 +335,18 @@ def add_product(request):
                 product = Product.objects.create(title=title, description=description, category=category, original_price=float(original_price), selling_price=float(selling_price), \
                                                 gender=gender, brand=brand, created_by=seller, max_purchase_qty=int(max_purchase_qty), stage='stage1')
 
-            except:
+            except Exception as e:
+                logger.error(f"Product creation failed: {str(e)}")
                 messages.error(request, 'Oops something went wrong 2')
                 return redirect(add_product) 
         
         else:
+            logger.warning(f"Product creation validation failed: {validation_error}")
             messages.error(request, validation_error)
             return redirect(add_product) 
 
         product.save()
+        logger.info(f"Product created successfully: {product.title} (ID: {product.id})")
         return redirect(add_product_step2,product_id=product.id)
     
     categories = Category.objects.filter(is_active=True)
@@ -587,6 +597,8 @@ def update_product_step3(request, product_id):
 @user_passes_test(is_admin, login_url='/permission-denied/')
 def product_action(request, product_id, action):
     product = Product.objects.get(id = product_id)
+    logger.info(f"Product action '{action}' performed on product: {product.title} (ID: {product_id}) by {request.user.username}")
+    
     if action == 'delete':
         product.is_active = False
         product.save()
@@ -598,8 +610,10 @@ def product_action(request, product_id, action):
     elif action == 'permenentDelete':
         if product.stage != 'stage3':
             product.delete()
+            logger.info(f"Product permanently deleted: {product.title}")
             messages.info(request,'Product deleted Permenently')        
         else:
+            logger.warning(f"Permanent deletion failed - product in stage3: {product.title}")
             messages.error(request,'Permenent deletion not possible')        
     return redirect(product_management)
 

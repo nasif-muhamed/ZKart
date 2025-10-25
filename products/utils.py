@@ -1,6 +1,9 @@
 from django.core.paginator import Paginator
 from .models import Category
 from users.models import Wishlist
+import logging
+
+logger = logging.getLogger('products')
 
 def product_list(request, object):
     page = int(request.GET.get('page',1))
@@ -29,6 +32,7 @@ def product_list(request, object):
     categories= Category.objects.filter(is_active = True, id__in=set(category_ids))
     brands = products_all.values_list('brand', flat= True)
 
+    logger.debug('Products paginated result: %s', products)
     user_wishlist = []
     if request.user.is_authenticated:
         user_wishlist = Wishlist.objects.filter(account = request.user.account).values_list('product', flat=True)
