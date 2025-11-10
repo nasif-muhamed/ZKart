@@ -2,10 +2,9 @@
 {% load static %}
 
 {% block style %}
-<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
 <style>
     .card {
-            margin-bottom: 1rem;
+        margin-bottom: 1rem;
     }
     .original-price {
         text-decoration: line-through;
@@ -18,8 +17,272 @@
         font-size: 1.25rem;
         font-weight: bold;
     }
-</style>
 
+    /* Custom Modal Styles */
+    .custom-modal {
+        display: none;
+        position: fixed;
+        z-index: 1000;
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 100%;
+        overflow: auto;
+        background-color: rgba(0, 0, 0, 0.6);
+    }
+
+    .custom-modal.open {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .modal-content-custom {
+        background-color: #fefefe;
+        padding: 0;
+        border: 1px solid #888;
+        width: 90%;
+        max-width: 800px;
+        border-radius: 8px;
+        box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+        max-height: 90vh;
+        overflow-y: auto;
+        position: relative;
+        animation: slideIn 0.3s ease-out;
+    }
+
+    @keyframes slideIn {
+        from {
+            transform: translateY(-50px);
+            opacity: 0;
+        }
+        to {
+            transform: translateY(0);
+            opacity: 1;
+        }
+    }
+
+    .modal-header-custom {
+        padding: 20px;
+        background-color: #f8f9fa;
+        border-bottom: 1px solid #dee2e6;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .modal-header-custom h5 {
+        margin: 0;
+        font-size: 1.25rem;
+        font-weight: 600;
+    }
+
+    .close-modal {
+        background: none;
+        border: none;
+        font-size: 2rem;
+        font-weight: bold;
+        color: #aaa;
+        cursor: pointer;
+        line-height: 1;
+        padding: 0;
+        width: 30px;
+        height: 30px;
+    }
+
+    .close-modal:hover,
+    .close-modal:focus {
+        color: #000;
+    }
+
+    .modal-body-custom {
+        padding: 20px;
+    }
+
+    /* Button styles matching product_details.html */
+    .button-no-zero, .button-zero {
+        color: black; 
+        background-color: white; 
+        border-radius: 50% !important; 
+        font-weight: 700; 
+        width: 35px; 
+        height: 35px;
+        padding: 0;
+        border: 2px solid black;
+        cursor: pointer;
+        transition: all 0.3s ease;
+    }
+
+    .button-zero[disabled] {
+        cursor: not-allowed;
+        text-decoration: line-through; 
+        opacity: 0.4;
+    }
+
+    .button-no-zero:hover:not(:disabled) {
+        color: white;
+        background-color: black;
+    }
+
+    .button-no-zero.active-size-btn {
+        color: white;
+        background-color: black;
+    }
+
+    .button-zero:hover {
+        text-decoration: line-through;
+    }
+
+    .variant-options {
+        margin-bottom: 20px;
+    }
+
+    .color-section {
+        margin-bottom: 20px;
+    }
+
+    .color-header {
+        display: flex;
+        align-items: center;
+        margin-bottom: 15px;
+    }
+
+    .color-circle {
+        height: 25px;
+        width: 25px;
+        border: 3px solid black;
+        border-radius: 50%;
+        margin-right: 10px;
+    }
+
+    .color-name {
+        margin: 0;
+        font-weight: 700;
+        color: black;
+    }
+
+    .size-buttons {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+    }
+
+    .size-option {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        width: 75px;
+    }
+
+    .size-info {
+        margin-top: 5px;
+        font-size: 10px;
+        text-align: center;
+    }
+
+    .form-group {
+        margin-bottom: 15px;
+    }
+
+    .form-group label {
+        display: block;
+        margin-bottom: 5px;
+        font-weight: 600;
+    }
+
+    .form-control {
+        width: 100px;
+        padding: 8px;
+        border: 1px solid #ced4da;
+        border-radius: 4px;
+        font-size: 14px;
+        background-color: white;
+    }
+
+    .btn {
+        padding: 10px 20px;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 14px;
+        font-weight: 600;
+        transition: all 0.3s ease;
+    }
+
+    .btn-primary {
+        background-color: #007bff;
+        color: white;
+    }
+
+    .btn-primary:hover {
+        background-color: #0056b3;
+    }
+
+    .btn-success {
+        background-color: #28a745;
+        color: white;
+    }
+
+    .btn-success:hover {
+        background-color: #218838;
+    }
+
+    .btn-danger {
+        background-color: #dc3545;
+        color: white;
+    }
+
+    .btn-danger:hover {
+        background-color: #c82333;
+    }
+
+    .alert {
+        padding: 12px 20px;
+        margin-bottom: 15px;
+        border: 1px solid transparent;
+        border-radius: 4px;
+    }
+
+    .alert-danger {
+        color: #721c24;
+        background-color: #f8d7da;
+        border-color: #f5c6cb;
+    }
+    .alert-error{
+        background-color: rgba(255, 0, 0, 0.396);
+        color: white;
+    }
+
+    .d-none {
+        display: none !important;
+    }
+
+    .product-image-modal {
+        width: 100%;
+        height: auto;
+        border-radius: 4px;
+    }
+
+    .price-display {
+        margin-bottom: 20px;
+    }
+
+    .price-display strong {
+        color: black;
+        font-size: 1.5rem;
+    }
+
+    .price-display em {
+        text-decoration: line-through;
+        color: #6c757d;
+        margin-left: 10px;
+    }
+
+    .price-display .discount {
+        color: orange;
+        margin-left: 5px;
+    }
+</style>
 {% endblock style %}
 
 {% block main_body %}
@@ -28,8 +291,19 @@
         <main class="col ms-sm-auto px-md-4">
             <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
                 <h1 class="h2">Wishlist</h1>
-
             </div>
+
+            <!-- Messages -->
+            {% if messages %}
+            <div class="alert-container">
+                {% for message in messages %}
+                <div class="alert alert-{{ message.tags }}" role="alert">
+                    {{ message }}
+                </div>
+                {% endfor %}
+            </div>
+            {% endif %}
+
             <!-- Wishlist Items -->
             <div id="wishlist-items">
                 {% if not wishlist %}
@@ -41,19 +315,24 @@
                 
                 {% for item in wishlist %}
                 <div class="card">
-                    <div class="card-body d-flex align-items-center">
-                        <div class="col-md-2">
+                    <div class="card-body d-flex align-items-center flex-wrap">
+                        <div class="col-md-2 col-sm-12">
                             <img src="{{item.product.product_images.all.0.product_image.url}}" class="img-fluid" alt="Product Image">
                         </div>
-                        <div class="col-md-6">
+                        <div class="col-md-3 col-sm-12">
                             <a href="{% url 'product_details' item.product.id %}" class="product-title" style="text-decoration: none;">
                                 {{item.product.title|truncatechars:60}}</a>
                         </div>
-                        <div class="col-md-2">
+                        <div class="col-md-2 col-sm-4">
                             <span class="offer-price">₹ {{item.product.product_selling_price|floatformat:0}}</span><br>
                             <span class="original-price">₹ {{item.product.original_price|floatformat:0}}</span>
                         </div>
-                        <div class="col-md-2">
+                        <div class="col-md-3 col-sm-4">
+                            <button type="button" class="btn btn-primary open-modal-btn" data-modal-id="modal-{{item.id}}">
+                                Add to Cart
+                            </button>
+                        </div>
+                        <div class="col-md-2 col-sm-4">
                             <form class="remove-form" method="post">
                                 {% csrf_token %}
                                 <input type="text" name="item_id" id="item_id" value="{{item.id}}" hidden>
@@ -62,6 +341,94 @@
                         </div>
                     </div>
                 </div>
+
+                <!-- Custom Modal for Add to Cart -->
+                <div id="modal-{{item.id}}" class="custom-modal">
+                    <div class="modal-content-custom">
+                        <div class="modal-header-custom">
+                            <h5>Select Size & Color</h5>
+                            <button class="close-modal" data-modal-id="modal-{{item.id}}">&times;</button>
+                        </div>
+                        <div class="modal-body-custom">
+                            <div class="row">
+                                <div class="col-md-4">
+                                    <img src="{{item.product.product_images.all.0.product_image.url}}" class="product-image-modal" alt="{{item.product.title}}">
+                                </div>
+                                <div class="col-md-8">
+                                    <h4>{{item.product.title}}</h4>
+                                    <div class="price-display">
+                                        <strong>₹{{ item.product.product_selling_price|floatformat:0 }}</strong>
+                                        <em>₹{{ item.product.original_price|floatformat:0 }}</em>
+                                        <span class="discount">({{ item.product.offer_percentage|floatformat:0 }}% OFF)</span>
+                                    </div>
+
+                                    <!-- Variant Selection -->
+                                    <div class="variant-options">
+                                        {% regroup item.product.variants.all by color.name as color_groups %}
+                                        {% for color_group in color_groups %}
+                                        <div class="color-section">
+                                            <div class="color-header">
+                                                <div class="color-circle" style="background-color: {{color_group.list.0.color.hex_code}};"></div>
+                                                <h5 class="color-name">{{ color_group.grouper }}</h5>
+                                            </div>
+                                            <div class="size-buttons">
+                                                {% for variant in color_group.list %}
+                                                <div class="size-option">
+                                                    <button type="button" 
+                                                            data-size="{{variant.size.name}}" 
+                                                            data-color="{{variant.color.name}}" 
+                                                            data-quantityleft="{{variant.quantity}}" 
+                                                            data-variant_id="{{variant.id}}" 
+                                                            {% if variant.quantity and variant.quantity > 0 %}
+                                                            class="button-no-zero size-btn-{{item.id}}"
+                                                            {% else %}
+                                                            class="button-zero size-btn-{{item.id}}" disabled
+                                                            {% endif %}>
+                                                        {{ variant.size.name }}
+                                                    </button>
+                                                    <div class="size-info">
+                                                        {% if not variant.quantity or variant.quantity == 0 %}
+                                                        Unavailable
+                                                        {% elif variant.quantity < 10 %}
+                                                        {{ variant.quantity }} Left
+                                                        {% endif %}
+                                                    </div>
+                                                </div>
+                                                {% endfor %}
+                                            </div>
+                                        </div>
+                                        {% endfor %}
+                                    </div>
+
+                                    <!-- Quantity Selection -->
+                                    <form id="add-to-cart-form-{{item.id}}" action="{% url 'add_to_cart' %}" method="post">
+                                        {% csrf_token %}
+                                        <input type="hidden" id="selected-color-{{item.id}}" name="color" />
+                                        <input type="hidden" id="selected-size-{{item.id}}" name="size" />
+                                        <input type="hidden" id="quantity-left-{{item.id}}" name="quantity_left" />
+                                        <input type="hidden" id="variant-id-{{item.id}}" name="variant_id" />
+                                        <input type="hidden" name="next" value="{% url 'wishlist' %}" />
+                                        <div class="form-group">
+                                            <label for="product-quantity-{{item.id}}">Quantity</label>
+                                            <input id="product-quantity-{{item.id}}" 
+                                                   type="number" 
+                                                   value="1" 
+                                                   min="1" 
+                                                   data-max_purchase_qty="{{item.product.max_purchase_qty}}" 
+                                                   class="form-control" 
+                                                   name="quantity">
+                                        </div>
+
+                                        <div class="alert alert-danger d-none" id="error-message-{{item.id}}" role="alert"></div>
+
+                                        <button class="btn btn-success" type="submit">Add to Cart</button>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <!-- End Modal -->
                 {% endfor %}
             </div>
         </main>
@@ -74,8 +441,63 @@
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
+    // ========== MODAL FUNCTIONS ==========
+    function openModal(modalId) {
+        const modal = document.getElementById(modalId);
+        if (modal) {
+            modal.classList.add('open');
+            document.body.style.overflow = 'hidden'; // Prevent background scrolling
+        }
+    }
+
+    function closeModal(modalId) {
+        const modal = document.getElementById(modalId);
+        if (modal) {
+            modal.classList.remove('open');
+            document.body.style.overflow = ''; // Restore scrolling
+        }
+    }
+
+    // Open modal buttons
+    const openModalButtons = document.querySelectorAll('.open-modal-btn');
+    openModalButtons.forEach(button => {
+        button.addEventListener('click', function() {
+            const modalId = this.getAttribute('data-modal-id');
+            openModal(modalId);
+        });
+    });
+
+    // Close modal buttons
+    const closeModalButtons = document.querySelectorAll('.close-modal');
+    closeModalButtons.forEach(button => {
+        button.addEventListener('click', function() {
+            const modalId = this.getAttribute('data-modal-id');
+            closeModal(modalId);
+        });
+    });
+
+    // Close modal when clicking outside
+    const modals = document.querySelectorAll('.custom-modal');
+    modals.forEach(modal => {
+        modal.addEventListener('click', function(e) {
+            if (e.target === modal) {
+                closeModal(modal.id);
+            }
+        });
+    });
+
+    // Close modal on ESC key
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') {
+            const openModal = document.querySelector('.custom-modal.open');
+            if (openModal) {
+                closeModal(openModal.id);
+            }
+        }
+    });
+
+    // ========== REMOVE FROM WISHLIST ==========
     const removeForms = document.querySelectorAll('.remove-form');
-    
     removeForms.forEach(form => {
         form.addEventListener('submit', function(e) {
             e.preventDefault();
@@ -95,6 +517,81 @@ document.addEventListener('DOMContentLoaded', function() {
             });
         });
     });
+
+    // ========== ADD TO CART LOGIC ==========
+    {% for item in wishlist %}
+    (function() {
+        const itemId = '{{item.id}}';
+        const sizeButtons = document.querySelectorAll('.size-btn-' + itemId);
+        const addToCartForm = document.getElementById('add-to-cart-form-' + itemId);
+        const selectedColorInput = document.getElementById('selected-color-' + itemId);
+        const selectedSizeInput = document.getElementById('selected-size-' + itemId);
+        const selectedQuantityLeftInput = document.getElementById('quantity-left-' + itemId);
+        const variantIdInput = document.getElementById('variant-id-' + itemId);
+        const quantityInput = document.getElementById('product-quantity-' + itemId);
+        const errorMessage = document.getElementById('error-message-' + itemId);
+        let previousButton = null;
+
+        // Size button selection
+        sizeButtons.forEach(button => {
+            button.addEventListener('click', function () {
+                if (this.disabled) return;
+
+                const size = this.dataset.size;
+                const color = this.dataset.color;
+                const quantityLeft = this.dataset.quantityleft;
+                const variantId = this.dataset.variant_id;
+
+                selectedSizeInput.value = size;
+                selectedColorInput.value = color;
+                selectedQuantityLeftInput.value = quantityLeft;
+                variantIdInput.value = variantId;
+
+                if (previousButton) {
+                    previousButton.classList.remove('active-size-btn');
+                }
+                this.classList.add('active-size-btn');
+                previousButton = this;
+
+                // Hide error message when valid selection is made
+                errorMessage.classList.add('d-none');
+            });
+        });
+
+        // Form validation on submit
+        if (addToCartForm) {
+            addToCartForm.addEventListener('submit', function (event) {
+                const size = selectedSizeInput.value;
+                const quantity = quantityInput.value;
+                const quantityLeft = selectedQuantityLeftInput.value;
+                const maxQty = quantityInput.dataset.max_purchase_qty;
+
+                errorMessage.classList.add('d-none');
+
+                if (!size || !quantity || quantity == '0') {
+                    errorMessage.textContent = 'Please select color, size, and quantity.';
+                    errorMessage.classList.remove('d-none');
+                    event.preventDefault();
+                    return;
+                }
+                
+                if (Number(quantity) > Number(quantityLeft)) {
+                    errorMessage.textContent = 'Insufficient stock available.';
+                    errorMessage.classList.remove('d-none');
+                    event.preventDefault();
+                    return;
+                }
+                
+                if (Number(quantity) > Number(maxQty)) {
+                    errorMessage.textContent = `A person can only purchase this product up to ${maxQty} quantities.`;
+                    errorMessage.classList.remove('d-none');
+                    event.preventDefault();
+                    return;
+                }
+            });
+        }
+    })();
+    {% endfor %}
 });
 </script>
 {% endblock scripts_profile %}

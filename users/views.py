@@ -334,18 +334,23 @@ def user_home(request):
 @login_required(login_url='/')
 def user_wishlist(request):
     account = request.user.account
-    wishlist = account.wishlists.all()
+    wishlist = account.wishlists.all().select_related('product').prefetch_related(
+        'product__variants__color',
+        'product__variants__size',
+        'product__product_images'
+    )
     
     if request.method == 'POST' and 'item_id' in request.POST:
         item_id = request.POST.get('item_id')
         wishlist.get(id=item_id).delete()
+        messages.success(request, 'Product removed from wishlist')
         return redirect('wishlist')
 
     context = {
-        'account' : account,
-        'wishlist' : wishlist,
+        'account': account,
+        'wishlist': wishlist,
     }
-    return render(request, 'user_profile/wishlist.html', context)
+    return render(request, 'user_profile/wishlist.html', context)                       
 
 
 @login_required

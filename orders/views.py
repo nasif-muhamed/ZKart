@@ -91,6 +91,7 @@ def cart_view(request):
 def add_to_cart(request):
     variant_id = int(request.POST.get('variant_id'))
     quantity = int(request.POST.get('quantity'))
+    next_url = request.POST.get('next', None)
     add_success = False
 
     variant = ProductVariant.objects.get(id = variant_id)
@@ -138,11 +139,12 @@ def add_to_cart(request):
             if 'coupon_discount' in request.session:
                 del request.session['coupon_discount']
                 del request.session['applied_coupon']
-                # order.coupon = None
-                # order.save()
                 messages.info(request, 'Coupon in cart has been reset due to change in order.')
 
-    return redirect(product_details, variant.product.id) 
+    if next_url:
+        return redirect(next_url)
+    else:
+        return redirect(product_details, variant.product.id)
 
 
 @login_required(login_url='/')
