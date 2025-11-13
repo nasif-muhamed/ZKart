@@ -201,161 +201,139 @@ def get_delivery_charge_for_checkout(request):
 def checkout_page(request):
     if request.method == 'GET' and not request.session.get('checkout_access'):
         return redirect(cart_view)
- 
     request.session['checkout_access'] = False
 
     try:
         customer = request.user.account
-        logger.info(f"Checkout page accessed by: {customer.user.username}")
-        
         if not customer.is_completed():
-            logger.warning(f"Checkout failed - incomplete profile for user: {customer.user.username}")
             messages.error(request, 'Complete your profile prior to Checkout')
             return redirect(cart_view)
 
-        addresses = customer.user_addresses.all()
-        # if not addresses.count():
-        #     messages.error(request, 'Add at least 1 Address')
-        #     return redirect(cart_view)
-    
-        order, created = Order.objects.get_or_create(customer=customer, status='cart')
+        order = Order.objects.get_or_create(customer=customer, status='cart')[0]
         orders = order.order_items.all()
-    except Exception as e:
-        logger.error(f"Checkout page error: {str(e)}")
-        messages.error(request, 'Something went wrong')
-        return redirect(checkout_page)
+        if not orders:
+            return redirect(cart_view)
 
-    if orders:
-        for order_item in orders:
-            if order_item.quantity > order_item.product_variant.quantity:
-                messages.error(request, f'{order_item.product_variant.product.title} is out of stock. Please remove it from the cart or adjust the stock')
+        # Validate stock
+        for item in orders:
+            if item.quantity > item.product_variant.quantity:
+                messages.error(request, f"{item.product_variant.product.title} is out of stock")
                 return redirect(cart_view)
+
+        addresses = customer.user_addresses.all()
         sub_total = order.get_cart_total()
-        coupon_discount = request.session['coupon_discount'] if 'coupon_discount' in request.session else 0
+        coupon_discount = request.session.get('coupon_discount', 0)
         total_amount = sub_total - coupon_discount
-        # default_address = addresses.get(default=True)
         delivery_charge = 'None'
 
         if request.method == 'POST':
-            selected_address_id = request.POST.get('selectedAddress')
-            selected_payment_method = request.POST.get('selectedPayment')
-            special_instructions = request.POST.get('special_instructions')
-            payment_id = request.POST.get('payment_id')
-            payment_failed = request.POST.get('payment_failed')
-
-            if "cod_button" in request.POST:
-                selected_payment_method = 'cod'
-                if total_amount > COD_LIMIT_IN_INR:
-                    messages.error(request, 'Order above Rs 1000 is not eligible for COD')
-                    return redirect(cart_view)
-
-            elif "wallet_button" in request.POST:
-                selected_payment_method = 'wallet'
-                customer_wallet = customer.wallet
-                if customer_wallet.balance < total_amount:
-                    messages.error(request, 'Not enough balance in your Wallet')
-                    return redirect(cart_view)
-
-            try:
-                with transaction.atomic():
-                    if selected_address_id and selected_payment_method:
-                        og_address = Address.objects.get(id=int(selected_address_id))
-                        delivery_charge = get_delivery_charge(og_address.id)
-                        if delivery_charge == 'Free':
-                            delivery_charge = 0
-                        elif delivery_charge == 'None':
-                            logger.warning(f"Invalid address for checkout: {selected_address_id}")
-                            messages.error(request, 'Invalid Address')
-                            return redirect(cart_view)
-                        
-                        order_address = order_address_creator(og_address)
-                        order.address = order_address
-                        order.payment_method = selected_payment_method
-                        order.payment_id = payment_id
-                        if special_instructions:
-                            order.special_instructions = special_instructions
-
-                        if selected_payment_method == 'razorpay' and payment_failed == 'true':
-                            order.status = 'pending'
-                        else:
-                            order.status = 'placed'
-                            order.order_date = timezone.now()
-
-                        order.delivery_charge = delivery_charge
-
-                        if selected_payment_method == 'cod' or selected_payment_method == 'wallet':
-                            order.order_identifier = generate_unique_order_id(customer.id)
-                            
-                        order.save()
-                        logger.info(f"Order placed successfully: {order.order_identifier} by {customer.user.username} via {selected_payment_method}")
-
-                        for order_item in orders:
-                            if selected_payment_method == 'razorpay' and payment_failed == 'true':
-                                order_item.status = 'pending'
-                                order_item.payment_status = 'failed'
-
-                            else:
-                                order_item.status = 'in_progress'
-                                order_item.order_date = timezone.now()                    
-                                order_item.product_variant.quantity -= order_item.quantity
-                                if selected_payment_method == 'razorpay' or selected_payment_method == 'wallet':
-                                    order_item.payment_status = 'success'
-                                
-                            order_item.selling_price = order_item.product_variant.product.product_selling_price()
-                            order_item.original_price = order_item.product_variant.product.original_price
-
-                            order_item.save()
-                            order_item.product_variant.save()
-                            order_item.product_variant.product.save()
-
-                        if 'coupon_discount' in request.session:
-                            order.coupon = Coupon.objects.get(coupon_code= request.session['applied_coupon'])
-                            order_total_basic = order.order_total_basic()
-                            coupon_discounts = int(request.session['coupon_discount'])
-                            for order_item in orders:
-                                order_item.coupon_discount = round((order_item.selling_price * order_item.quantity / order_total_basic) * coupon_discounts)
-                                order_item.save()
-
-                            order.save()
-                            del request.session['applied_coupon']
-                            del request.session['coupon_discount']
-
-                        if selected_payment_method == 'razorpay':
-                            response_data = {
-                                'status': 'success',
-                                'message': f'Your Order ID: {order.id}',
-                                'order_id': order.id,
-                            }
-                            return JsonResponse(response_data)
-
-                        if selected_payment_method == 'wallet':
-                            customer_wallet.balance -= total_amount
-                            customer_wallet.save()
-
-                        return redirect(order_success, order.id)
-
-                    else:
-                        messages.error(request, 'Select an Address or Payment method')
-                        return redirect(checkout_page)
-
-            except Exception as e:
-                logger.error(f"Order placement failed: {str(e)}")
-                messages.error(request, 'Something went wrong while ordering. Contact customer care if amount debited')
-                return redirect(checkout_page)
-
+            return handle_checkout_post(
+                request, customer, order, orders, addresses, total_amount
+            )
 
         context = {
-            'orders' : orders,
-            'addresses' : addresses,
-            'sub_total' : sub_total,
-            'delivery_charge' : delivery_charge,
-            'total_amount' : total_amount,
-            'coupon_discount_js' : coupon_discount,
+            'orders': orders,
+            'addresses': addresses,
+            'sub_total': sub_total,
+            'delivery_charge': delivery_charge,
+            'total_amount': total_amount,
+            'coupon_discount_js': coupon_discount,
         }
-        return render(request,'checkout.html', context)
-    
-    return redirect(cart_view)
+        return render(request, 'checkout.html', context)
 
+    except Exception as e:
+        logger.exception(f"Checkout error: {e}")
+        messages.error(request, 'Something went wrong')
+        return redirect(cart_view)
+
+
+@transaction.atomic
+def handle_checkout_post(request, customer, order, orders, addresses, total_amount):
+    data = request.POST
+    selected_address_id = data.get('selectedAddress')
+    selected_payment = data.get('selectedPayment')
+    payment_id = data.get('payment_id')
+    payment_failed = data.get('payment_failed') == 'true'
+    instructions = data.get('special_instructions')
+
+    # Handle payment type
+    if 'cod_button' in data:
+        selected_payment = 'cod'
+        if total_amount > COD_LIMIT_IN_INR:
+            messages.error(request, 'Order above ₹1000 not eligible for COD')
+            return redirect(cart_view)
+
+    if 'wallet_button' in data:
+        selected_payment = 'wallet'
+        wallet = customer.wallet
+        if wallet.balance < total_amount:
+            messages.error(request, 'Not enough balance in Wallet')
+            return redirect(cart_view)
+
+    # Validate address
+    if not selected_address_id or not selected_payment:
+        messages.error(request, 'Select Address and Payment method')
+        return redirect(checkout_page)
+
+    address = Address.objects.filter(id=selected_address_id).first()
+    delivery_charge = get_delivery_charge(selected_address_id)
+    if delivery_charge in ['None', None]:
+        messages.error(request, 'Invalid Address')
+        return redirect(cart_view)
+
+    # Order setup
+    order.address = order_address_creator(address)
+    order.payment_method = selected_payment
+    order.payment_id = payment_id
+    order.special_instructions = instructions or ''
+    order.delivery_charge = 0 if delivery_charge == 'Free' else delivery_charge
+    order.status = 'pending' if (selected_payment == 'razorpay' and payment_failed) else 'placed'
+    order.order_date = timezone.now()
+    if selected_payment in ['cod', 'wallet']:
+        order.order_identifier = generate_unique_order_id(customer.id)
+    order.save()
+
+    process_order_items(order, orders, selected_payment, payment_failed)
+    apply_coupon_if_exists(request, order, orders)
+    if selected_payment == 'wallet':
+        wallet.balance -= total_amount
+        wallet.save()
+
+    if selected_payment == 'razorpay':
+        return JsonResponse({'status': 'success', 'order_id': order.id})
+    return redirect(order_success, order.id)
+
+
+def process_order_items(order, items, payment_method, payment_failed):
+    for item in items:
+        item.status = 'pending' if (payment_method == 'razorpay' and payment_failed) else 'in_progress'
+        item.order_date = timezone.now()
+        item.payment_status = (
+            'failed' if (payment_method == 'razorpay' and payment_failed)
+            else 'success' if payment_method in ['wallet', 'razorpay']
+            else item.payment_status
+        )
+        item.selling_price = item.product_variant.product.product_selling_price()
+        item.original_price = item.product_variant.product.original_price
+        item.product_variant.quantity -= item.quantity
+        item.product_variant.save()
+        item.save()
+
+
+def apply_coupon_if_exists(request, order, items):
+    if 'coupon_discount' not in request.session:
+        return
+    try:
+        order.coupon = Coupon.objects.get(coupon_code=request.session['applied_coupon'])
+        total_basic = order.order_total_basic()
+        discount_total = int(request.session['coupon_discount'])
+        for i in items:
+            i.coupon_discount = round((i.selling_price * i.quantity / total_basic) * discount_total)
+            i.save()
+        order.save()
+    finally:
+        request.session.pop('applied_coupon', None)
+        request.session.pop('coupon_discount', None)
 
 def retry_payment_stock_check(request):
     try:
